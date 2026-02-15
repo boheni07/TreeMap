@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Camera, Settings } from 'lucide-react';
+import { Camera, Settings, X, Save, Wifi } from 'lucide-react';
 
 // Hooks
 import { useCamera } from '../hooks/useCamera';
@@ -27,6 +27,11 @@ const MobileSimulator = () => {
     const [captureStatus, setCaptureStatus] = useState<{ type: 'warning' | 'error' | 'success', message: string } | null>(null);
     const [measurement, setMeasurement] = useState<any | null>(null);
 
+    // Server Settings State
+    const [serverIp, setServerIp] = useState(localStorage.getItem('TREEMAP_SERVER_IP') || window.location.hostname);
+    const [showSettings, setShowSettings] = useState(false);
+    const [tempIp, setTempIp] = useState(serverIp);
+
     const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
     // 2. Computed Values
@@ -52,6 +57,13 @@ const MobileSimulator = () => {
     }, [angle, roll, lux, motionLevel]);
 
     // 4. Action Handlers
+    const handleSaveSettings = () => {
+        localStorage.setItem('TREEMAP_SERVER_IP', tempIp);
+        setServerIp(tempIp);
+        setShowSettings(false);
+        alert(`서버 주소가 ${tempIp}로 설정되었습니다.`);
+    };
+
     const handleCapture = () => {
         if (!isVertical || captureStatus?.type === 'error' || !videoRef.current || !canvasRef.current) return;
 
@@ -121,9 +133,8 @@ const MobileSimulator = () => {
 
         setMeasurement(measurementData);
 
-        // 서버로 데이터 전송 (FastAPI 서버 연동 - 동적 호스트 설정)
-        const serverHost = window.location.hostname;
-        const apiUri = `http://${serverHost}:8000/api/measurements`;
+        // 서버로 데이터 전송 (FastAPI 서버 연동 - 동적/설정 호스트)
+        const apiUri = `http://${serverIp}:8000/api/measurements`;
 
         fetch(apiUri, {
             method: 'POST',
@@ -143,12 +154,12 @@ const MobileSimulator = () => {
                     alert('✅ 분석 데이터가 서버로 전송되었습니다.');
                 } else {
                     console.error('Server sync failed');
-                    alert('❌ 서버 전송 실패: 서버 상태를 확인해 주세요.');
+                    alert(`❌ 서버 전송 실패: 서버 상태를 확인해 주세요.\n(응답 코드: ${res.status})`);
                 }
             })
             .catch(err => {
                 console.error('Network error during sync:', err);
-                alert(`⚠️ 전송 오류: 네트워크 연결을 확인하세요.\n(서버 주소: ${apiUri})`);
+                alert(`⚠️ 전송 오류: 네트워크 연결을 확인하세요.\n서버 주소: ${apiUri}\n\n도움말: PC와 스마트폰이 같은 Wi-Fi에 연결되어 있는지 확인하고, 필요시 '설정(톱니바퀴)'에서 PC의 IP 주소를 직접 입력하세요.`);
             });
     };
 
@@ -213,9 +224,16 @@ const MobileSimulator = () => {
                 <div style={{ position: 'absolute', top: 0, width: '100%', padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', background: 'linear-gradient(to bottom, rgba(0,0,0,0.8), transparent)', pointerEvents: 'none', zIndex: 1001 }}>
                     <span style={{ fontWeight: 'bold', fontSize: '18px', color: 'rgba(255,255,255,0.7)' }}>TreeMap Mobile</span>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '10px', color: '#888', fontWeight: 'bold' }}>CURR. LOCATION</span>
-                            <Settings size={18} style={{ pointerEvents: 'auto', cursor: 'pointer', color: '#888' }} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#10b981', fontSize: '10px', fontWeight: 'bold' }}>
+                                <Wifi size={14} />
+                                {serverIp}
+                            </div>
+                            <Settings
+                                size={20}
+                                onClick={() => setShowSettings(true)}
+                                style={{ pointerEvents: 'auto', cursor: 'pointer', color: 'rgba(255,255,255,0.6)' }}
+                            />
                         </div>
                         <div style={{
                             padding: '10px 16px', backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)',
@@ -229,6 +247,63 @@ const MobileSimulator = () => {
 
                 <canvas ref={canvasRef} style={{ display: 'none' }} />
             </div>
+
+            {/* 서버 설정 모달 */}
+            {showSettings && (
+                <div style={{
+                    position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+                    backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(5px)',
+                    display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000
+                }}>
+                    <div style={{
+                        width: '85%', maxWidth: '400px', backgroundColor: '#1e293b', borderRadius: '20px',
+                        padding: '24px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold' }}>서버 연결 상세 설정</h3>
+                            <X size={24} onClick={() => setShowSettings(false)} style={{ cursor: 'pointer', color: '#94a3b8' }} />
+                        </div>
+
+                        <div style={{ marginBottom: '20px' }}>
+                            <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '8px', fontWeight: 'bold' }}>
+                                BACKEND PC IP ADDRESS
+                            </label>
+                            <input
+                                type="text"
+                                value={tempIp}
+                                onChange={(e) => setTempIp(e.target.value)}
+                                placeholder="예: 192.168.0.10"
+                                style={{
+                                    width: '100%', padding: '12px 16px', backgroundColor: '#0f172a',
+                                    border: '1px solid #334155', borderRadius: '10px', color: 'white',
+                                    fontSize: '16px', outline: 'none'
+                                }}
+                            />
+                        </div>
+
+                        <div style={{ backgroundColor: '#0f172a', padding: '12px', borderRadius: '10px', marginBottom: '24px', fontSize: '13px', color: '#94a3b8', lineHeight: '1.6' }}>
+                            <p style={{ margin: 0 }}>💡 <strong>도움말:</strong></p>
+                            <ol style={{ paddingLeft: '18px', margin: '4px 0 0 0' }}>
+                                <li>PC와 스마트폰을 같은 Wi-Fi에 연결합니다.</li>
+                                <li>PC에서 `ipconfig`로 확인된 IPv4 주소를 입력하세요.</li>
+                                <li>기본값은 브라우저 접속 주소입니다.</li>
+                            </ol>
+                        </div>
+
+                        <button
+                            onClick={handleSaveSettings}
+                            style={{
+                                width: '100%', padding: '14px', backgroundColor: '#10b981', color: 'white',
+                                border: 'none', borderRadius: '12px', fontWeight: 'bold', fontSize: '16px',
+                                display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px'
+                            }}
+                        >
+                            <Save size={20} />
+                            설정 저장 및 적용
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {measurement && (
                 <SurveyReport measurement={measurement} onClose={() => setMeasurement(null)} />
