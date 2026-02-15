@@ -185,7 +185,7 @@ const TreeSurveySimulator = () => {
         const treeHeight = dist * Math.tan(Math.max(0.01, (110 - angle) * Math.PI / 180)) + userHeight;
 
         const targetX = Math.round(vw / 2);
-        const targetY = Math.round(vh * 0.75);
+        const targetY = Math.round(vh * 0.5); // 정중앙(50%)으로 변경
 
         setMeasurement({
             photo: photoData,
@@ -292,7 +292,7 @@ const TreeSurveySimulator = () => {
                     </div>
                 </div>
 
-                <div style={{ position: 'absolute', top: '75%', left: '50%', transform: 'translate(-50%, -50%)', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', zIndex: 11, width: 0, height: 0 }}>
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', zIndex: 11, width: 0, height: 0 }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                         <div style={{
                             width: 'clamp(100px, 28vw, 130px)', height: 'clamp(100px, 28vw, 130px)',
