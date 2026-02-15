@@ -36,6 +36,7 @@ const TreeSurveySimulator = () => {
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const sensorBuffer = useRef<Array<{ t: number, p: number, r: number, h: number }>>([]);
 
     useEffect(() => {
         // 1. 카메라 스트림
@@ -76,6 +77,15 @@ const TreeSurveySimulator = () => {
         const magnetThreshold = 2.0; // 자석 효과 범위 (더 강력하게 센터에 붙음)
 
         const handleOrientation = (e: DeviceOrientationEvent) => {
+            const now = performance.now();
+            const rawH = e.alpha || 0;
+            const rawP = e.beta || 90;
+            const rawR = e.gamma || 0;
+
+            // 실시간 센서 버퍼 업데이트 (과거 2초 유지)
+            sensorBuffer.current.push({ t: now, p: rawP, r: rawR, h: rawH });
+            if (sensorBuffer.current.length > 100) sensorBuffer.current.shift();
+
             if (e.alpha !== null) setHeading(e.alpha);
 
             if (e.beta !== null) {
@@ -155,9 +165,44 @@ const TreeSurveySimulator = () => {
 
     const targetGps = calculateTargetGps();
 
+    // 센서 데이터 선형 보간 (Linear Interpolation) 함수
+    const getInterpolatedSensorData = (targetTime: number) => {
+        const buffer = sensorBuffer.current;
+        if (buffer.length < 2) return { p: angle, r: roll, h: heading };
+
+        // 타겟 시간 주변의 두 프레임 찾기
+        let idx = -1;
+        for (let i = 0; i < buffer.length - 1; i++) {
+            if (buffer[i].t <= targetTime && buffer[i + 1].t >= targetTime) {
+                idx = i;
+                break;
+            }
+        }
+
+        if (idx === -1) {
+            // 범위를 벗어난 경우 가장 가까운 데이터 반환
+            const last = buffer[buffer.length - 1];
+            return { p: last.p, r: last.r, h: last.h };
+        }
+
+        const f1 = buffer[idx];
+        const f2 = buffer[idx + 1];
+        const ratio = (targetTime - f1.t) / (f2.t - f1.t);
+
+        // 정밀 선형 보간 (Larp)
+        const lerp = (v1: number, v2: number, t: number) => v1 + (v2 - v1) * t;
+
+        return {
+            p: lerp(f1.p, f2.p, ratio),
+            r: lerp(f1.r, f2.r, ratio),
+            h: lerp(f1.h, f2.h, ratio)
+        };
+    };
+
     const handleCapture = () => {
         if (!isVertical || captureStatus?.type === 'error' || !videoRef.current || !canvasRef.current) return;
 
+        const captureTime = performance.now(); // 캡처 시점 고해상도 타임스탬프
         const canvas = canvasRef.current;
         const video = videoRef.current;
         const vw = video.videoWidth;
@@ -174,6 +219,9 @@ const TreeSurveySimulator = () => {
         if (ctx) ctx.drawImage(video, 0, 0, vw, vh);
         const photoData = canvas.toDataURL('image/jpeg', 0.9);
 
+        // 셔터 랙 보정된 센서 데이터 획득
+        const syncedPose = getInterpolatedSensorData(captureTime);
+
         // 가상 품질 검합
         if (Math.random() > 0.98) {
             alert("역광이 감지되었습니다. 반대 방향에서 촬영해 주세요.");
@@ -182,7 +230,7 @@ const TreeSurveySimulator = () => {
 
         const dist = currentDistance;
         const dbh = 2 * dist * Math.tan(((150 * (60 / 4000)) * Math.PI / 180) / 2) * 100;
-        const treeHeight = dist * Math.tan(Math.max(0.01, (110 - angle) * Math.PI / 180)) + userHeight;
+        const treeHeight = dist * Math.tan(Math.max(0.01, (110 - syncedPose.p) * Math.PI / 180)) + userHeight;
 
         const targetX = Math.round(vw / 2);
         const targetY = Math.round(vh * 0.5); // 정중앙(50%)으로 변경
@@ -205,13 +253,13 @@ const TreeSurveySimulator = () => {
                 precision: "High-accuracy (WAAS/EGNOS enabled)"
             },
             pose: {
-                pitch: parseFloat(angle.toFixed(2)),
-                roll: parseFloat(roll.toFixed(2)),
-                heading: parseFloat(heading.toFixed(2)),
+                pitch: parseFloat(syncedPose.p.toFixed(2)),
+                roll: parseFloat(syncedPose.r.toFixed(2)),
+                heading: parseFloat(syncedPose.h.toFixed(2)),
                 gravity: { x: 0.05, y: -9.8, z: 0.12 }
             },
-            sensorLog: Array.from({ length: 10 }).map((_, i) => ({
-                t: Date.now() - (1000 - i * 100),
+            sensorLog: sensorBuffer.current.slice(-10).map(f => ({
+                t: f.t,
                 a: { x: 0.01, y: 9.8, z: 0.05 },
                 g: { x: 0, y: 0.1, z: 0 }
             })),
@@ -228,7 +276,9 @@ const TreeSurveySimulator = () => {
             serverPayload: {
                 depth_engine: "DTP-v4",
                 correction_matrix: "calibrated_android_v12",
-                ai_inference_status: "ready_for_payload"
+                ai_inference_status: "ready_for_payload",
+                shutter_lag_compensation: "enabled",
+                sync_offset_ms: parseFloat((performance.now() - captureTime).toFixed(2))
             }
         });
     };
