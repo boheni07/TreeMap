@@ -292,7 +292,16 @@ const TreeSurveySimulator = () => {
                     </div>
                 </div>
 
-                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', zIndex: 11, width: 0, height: 0 }}>
+                {/* 1. 센터 포인트 (화면 정중앙 50% 고정 - 거리/GPS 산출 기준) */}
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 12, pointerEvents: 'none' }}>
+                    <div style={{ position: 'relative', width: '40px', height: '40px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                        <div style={{ position: 'absolute', width: '100%', height: '3px', backgroundColor: '#ff5252', boxShadow: '0 0 10px rgba(255, 82, 82, 0.8)' }} />
+                        <div style={{ position: 'absolute', height: '100%', width: '3px', backgroundColor: '#ff5252', boxShadow: '0 0 10px rgba(255, 82, 82, 0.8)' }} />
+                    </div>
+                </div>
+
+                {/* 2. 원형 물방울 수평계 (기존 위치 75% - 수평 가이드) */}
+                <div style={{ position: 'absolute', top: '75%', left: '50%', transform: 'translate(-50%, -50%)', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', zIndex: 11, width: 0, height: 0 }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                         <div style={{
                             width: 'clamp(100px, 28vw, 130px)', height: 'clamp(100px, 28vw, 130px)',
@@ -303,9 +312,6 @@ const TreeSurveySimulator = () => {
                         }}>
                             <div style={{ position: 'absolute', width: '100%', height: 1.5, backgroundColor: 'rgba(255,255,255,0.2)' }} />
                             <div style={{ position: 'absolute', height: '100%', width: 1.5, backgroundColor: 'rgba(255,255,255,0.2)' }} />
-                            {/* 센터 포인트: 빨간색 + 표식 */}
-                            <div style={{ position: 'absolute', width: '40%', height: 3.5, backgroundColor: '#ff5252', boxShadow: '0 0 10px rgba(255, 82, 82, 0.8)', zIndex: 2 }} />
-                            <div style={{ position: 'absolute', height: '40%', width: 3.5, backgroundColor: '#ff5252', boxShadow: '0 0 10px rgba(255, 82, 82, 0.8)', zIndex: 2 }} />
                             <div style={{
                                 width: '22%', height: '22%', borderRadius: '50%', transition: 'transform 0.1s cubic-bezier(0.2, 0.8, 0.2, 1)',
                                 background: isVertical ? 'radial-gradient(circle at 35% 35%, #e8f5e9, #4caf50 70%, #1b5e20)' : 'radial-gradient(circle at 35% 35%, #ffebee, #f44336 70%, #b71c1c)',
@@ -316,7 +322,7 @@ const TreeSurveySimulator = () => {
                                 <div style={{ position: 'absolute', top: '15%', left: '15%', width: '40%', height: '40%', background: 'rgba(255,255,255,0.6)', borderRadius: '50%', filter: 'blur(1px)' }} />
                             </div>
                         </div>
-                        <span style={{ color: isVertical ? '#4caf50' : '#ff5252', fontSize: 'clamp(10px, 2.5vw, 12px)', fontWeight: 'bold', marginTop: 12, textShadow: '0 2px 4px rgba(0,0,0,0.5)', letterSpacing: '1px', whiteSpace: 'nowrap' }}>1.2M TARGET</span>
+                        <span style={{ color: isVertical ? '#4caf50' : '#ff5252', fontSize: 'clamp(10px, 2.5vw, 12px)', fontWeight: 'bold', marginTop: 12, textShadow: '0 2px 4px rgba(0,0,0,0.5)', letterSpacing: '1px', whiteSpace: 'nowrap' }}>1.2M TARGET LEVEL</span>
                     </div>
                 </div>
 
