@@ -62,22 +62,29 @@ const TreeSurveySimulator = () => {
         // 3. 자이로 센서 (DeviceOrientation) 연동
         let lastAngle = 90;
         let lastRoll = 0;
-        const smoothingFactor = 0.15; // 손떨림 방지 감도 (0~1, 낮을수록 더 부드러움)
+        const smoothingFactor = 0.08; // 감도를 낮추어 더 묵직하게(둔하게) 이동
+        const stepUnit = 0.5; // 단계별 이동 단위 (0.5도씩)
 
         const handleOrientation = (e: DeviceOrientationEvent) => {
             if (e.alpha !== null) setHeading(e.alpha);
 
-            // Pitch (beta) & Roll (gamma) - 저역 통과 필터(LPF) 적용하여 떨림 방지
+            // Pitch (beta) & Roll (gamma) - 필터링 및 단계별 이동 적용
             if (e.beta !== null) {
-                const smoothedAngle = (e.beta * smoothingFactor) + (lastAngle * (1 - smoothingFactor));
-                setAngle(smoothedAngle);
-                lastAngle = smoothedAngle;
+                const smoothed = (e.beta * smoothingFactor) + (lastAngle * (1 - smoothingFactor));
+                let stepped = Math.round(smoothed / stepUnit) * stepUnit;
+                if (Math.abs(stepped - 90) < 1.5) stepped = 90;
+
+                setAngle(stepped);
+                lastAngle = smoothed;
             }
 
             if (e.gamma !== null) {
-                const smoothedRoll = (e.gamma * smoothingFactor) + (lastRoll * (1 - smoothingFactor));
-                setRoll(smoothedRoll);
-                lastRoll = smoothedRoll;
+                const smoothed = (e.gamma * smoothingFactor) + (lastRoll * (1 - smoothingFactor));
+                let stepped = Math.round(smoothed / stepUnit) * stepUnit;
+                if (Math.abs(stepped) < 1.5) stepped = 0;
+
+                setRoll(stepped);
+                lastRoll = smoothed;
             }
         };
 
