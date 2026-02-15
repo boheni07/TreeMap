@@ -333,8 +333,8 @@ const TreeSurveySimulator = () => {
                     </div>
                 </div>
 
-                {/* 촬영 버튼 (좌측 중앙 배치) */}
-                <div style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', zIndex: 40 }}>
+                {/* 촬영 버튼 (하단 좌측 25% 배치) */}
+                <div style={{ position: 'absolute', left: '25%', bottom: 'clamp(40px, 10vh, 80px)', transform: 'translateX(-50%)', zIndex: 40, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <button
                         onClick={handleCapture}
                         disabled={!isVertical}
@@ -356,8 +356,8 @@ const TreeSurveySimulator = () => {
                     >
                         <Camera size={36} color="white" strokeWidth={2.5} />
                     </button>
-                    <div style={{ marginTop: '12px', textAlign: 'center', fontSize: '10px', fontWeight: 'bold', color: isVertical ? '#4caf50' : '#888', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>
-                        {isVertical ? 'READY TO CAPTURE' : 'ALIGNING...'}
+                    <div style={{ marginTop: '12px', textAlign: 'center', fontSize: '10px', fontWeight: 'bold', color: isVertical ? '#4caf50' : '#888', textShadow: '0 2px 4px rgba(0,0,0,0.8)', letterSpacing: '0.5px' }}>
+                        {isVertical ? 'READY' : 'ALIGNING'}
                     </div>
                 </div>
 
