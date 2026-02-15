@@ -172,7 +172,7 @@ const TreeSurveySimulator = () => {
                 </div>
 
                 {/* 촬영 버튼 */}
-                <div style={{ position: 'absolute', left: '25%', bottom: 'clamp(40px, 10vh, 80px)', transform: 'translateX(-50%)', zIndex: 40, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{ position: 'absolute', left: '50%', bottom: 'clamp(40px, 10vh, 80px)', transform: 'translateX(-50%)', zIndex: 40, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <button
                         onClick={handleCapture}
                         disabled={!isVertical || captureStatus?.type === 'error'}
