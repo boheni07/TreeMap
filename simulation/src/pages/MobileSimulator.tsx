@@ -224,26 +224,33 @@ const MobileSimulator = () => {
                 <div style={{ position: 'absolute', top: 0, width: '100%', padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', background: 'linear-gradient(to bottom, rgba(0,0,0,0.8), transparent)', pointerEvents: 'none', zIndex: 1001 }}>
                     <span style={{ fontWeight: 'bold', fontSize: '18px', color: 'rgba(255,255,255,0.7)' }}>TreeMap Mobile</span>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#10b981', fontSize: '10px', fontWeight: 'bold' }}>
-                                <Wifi size={14} />
-                                {serverIp}
-                            </div>
-                            <Settings
-                                size={20}
-                                onClick={() => setShowSettings(true)}
-                                style={{ pointerEvents: 'auto', cursor: 'pointer', color: 'rgba(255,255,255,0.6)' }}
-                            />
-                        </div>
                         <div style={{
                             padding: '10px 16px', backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)',
                             borderRadius: '14px', border: '1px solid rgba(255,255,255,0.2)', fontFamily: 'monospace', fontSize: '12px', textAlign: 'right', color: '#fff', boxShadow: '0 4px 15px rgba(0,0,0,0.5)'
                         }}>
+                            Server IP: <span style={{ color: '#10b981', fontWeight: 'bold' }}>{serverIp}</span><br />
                             Lat: {currentGps.lat.toFixed(6)}<br />
                             Lon: {currentGps.lon.toFixed(6)}
                         </div>
                     </div>
                 </div>
+
+                {/* 설정 플로팅 버튼 - 클릭 보장 및 시인성 확보 */}
+                <button
+                    onClick={() => setShowSettings(true)}
+                    style={{
+                        position: 'absolute', top: '20px', right: '20px', zIndex: 2000,
+                        width: '44px', height: '44px', borderRadius: '12px',
+                        backgroundColor: 'rgba(0,0,0,0.6)', color: 'white',
+                        border: '1px solid rgba(255,255,255,0.3)',
+                        display: 'flex', justifyContent: 'center', alignItems: 'center',
+                        cursor: 'pointer', backdropFilter: 'blur(10px)',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                        pointerEvents: 'auto'
+                    }}
+                >
+                    <Settings size={24} />
+                </button>
 
                 <canvas ref={canvasRef} style={{ display: 'none' }} />
             </div>
