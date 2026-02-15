@@ -37,11 +37,35 @@ const TreeSurveySimulator = () => {
             { enableHighAccuracy: true }
         );
 
-        // 3. 나침반/방위각 (시뮬레이션 또는 DeviceOrientation)
+        // 3. 자이로 센서 (DeviceOrientation) 연동
         const handleOrientation = (e: DeviceOrientationEvent) => {
             if (e.alpha !== null) setHeading(e.alpha);
+
+            // beta: 앞뒤 기울기 (-180 ~ 180), 기기를 세웠을 때 약 90도
+            if (e.beta !== null) {
+                // 부드러운 움직임을 위해 일부 보정하거나 그대로 사용
+                // 여기서는 시뮬레이터 로직에 맞게 beta 값을 angle로 직접 사용
+                setAngle(e.beta);
+            }
         };
-        window.addEventListener('deviceorientation', handleOrientation);
+
+        // 권한 요청 처리 (iOS 13+ 대응)
+        const requestPermission = async () => {
+            if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+                try {
+                    const permission = await (DeviceOrientationEvent as any).requestPermission();
+                    if (permission === 'granted') {
+                        window.addEventListener('deviceorientation', handleOrientation);
+                    }
+                } catch (err) {
+                    console.error("Sensor permission error:", err);
+                }
+            } else {
+                window.addEventListener('deviceorientation', handleOrientation);
+            }
+        };
+
+        requestPermission();
 
         return () => {
             if (videoRef.current?.srcObject) {
