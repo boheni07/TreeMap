@@ -37,7 +37,11 @@ const TreeSurveySimulator = () => {
         const enableCamera = async () => {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'environment' }
+                    video: {
+                        facingMode: 'environment',
+                        width: { ideal: 4000 },
+                        height: { ideal: 3000 }
+                    }
                 });
                 if (videoRef.current) videoRef.current.srcObject = stream;
             } catch (err) {
@@ -116,11 +120,23 @@ const TreeSurveySimulator = () => {
     }, []);
 
     useEffect(() => {
-        // 자석 효과 및 수직 상태 판단: Pitch와 Roll이 모두 임계값(1.5도) 이내면 활성화
+        // 자석 효과 및 수직 상태 판단
         const pitchInLimit = Math.abs(angle - 90) < 1.5;
         const rollInLimit = Math.abs(roll) < 1.5;
-        setIsVertical(pitchInLimit && rollInLimit);
-    }, [angle, roll]);
+        const vertical = pitchInLimit && rollInLimit;
+        setIsVertical(vertical);
+
+        // 정밀 촬영 조건 검증
+        if (!vertical) {
+            setCaptureStatus({ type: 'warning', message: '수평계를 중앙에 맞춰주세요' });
+        } else if (lux < 500) {
+            setCaptureStatus({ type: 'error', message: '조도가 너무 낮습니다 (주간 야외 권장)' });
+        } else if (motionLevel > 0.05) {
+            setCaptureStatus({ type: 'error', message: '흔들림 감지됨 (기기를 고정하세요)' });
+        } else {
+            setCaptureStatus(null);
+        }
+    }, [angle, roll, lux, motionLevel]);
 
     // 실시간 거리 계산
     const currentDistance = (userHeight - 1.2) / Math.tan(Math.max(0.01, (angle - 90) * Math.PI / 180));
@@ -141,18 +157,30 @@ const TreeSurveySimulator = () => {
     const targetGps = calculateTargetGps();
 
     const handleCapture = () => {
-        if (!isVertical || !videoRef.current || !canvasRef.current) return;
+        if (!isVertical || captureStatus?.type === 'error' || !videoRef.current || !canvasRef.current) return;
 
-        // 1. 사진 및 해상도 캡처
         const canvas = canvasRef.current;
         const video = videoRef.current;
         const vw = video.videoWidth;
         const vh = video.videoHeight;
+
+        // 해상도 검증 (12MP = 12,000,000 픽셀 이상)
+        if (vw * vh < 11000000) {
+            alert(`해상도 미달: 현재 ${vw}x${vh}. 12MP급 기기를 사용해 주세요.`);
+            return;
+        }
+
         canvas.width = vw;
         canvas.height = vh;
         const ctx = canvas.getContext('2d');
         if (ctx) ctx.drawImage(video, 0, 0, vw, vh);
         const photoData = canvas.toDataURL('image/jpeg', 0.9);
+
+        // 가상 품질 검증 (역광/그림자 시뮬레이션)
+        if (Math.random() > 0.95) {
+            alert("역광이 감지되었습니다. 반대 방향에서 촬영해 주세요.");
+            return;
+        }
 
         // 2. 정밀 데이터 계산
         const dist = currentDistance;
@@ -321,148 +349,161 @@ const TreeSurveySimulator = () => {
                     </div>
                 </div>
 
-                {/* 상단 바 - Safe Area 적용 및 GPS 레이아웃 수정 */}
-                <div style={{ position: 'absolute', top: 0, width: '100%', padding: 'clamp(12px, 3vh, 20px) 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', background: 'linear-gradient(to bottom, rgba(0,0,0,0.8), transparent)', pointerEvents: 'none', zIndex: 30 }}>
-                    <span style={{ fontWeight: 'bold', fontSize: 'clamp(14px, 4vw, 18px)' }}>TreeMap AI</span>
+                {/* 촬영 가이드 안내 메시지 */}
+                {captureStatus && (
+                    <div style={{
+                        position: 'absolute', top: '20%', left: '50%', transform: 'translateX(-50%)',
+                        backgroundColor: captureStatus.type === 'error' ? 'rgba(244, 67, 54, 0.9)' : 'rgba(255, 152, 0, 0.9)',
+                        padding: '10px 20px', borderRadius: '30px', color: 'white', fontWeight: 'bold',
+                        fontSize: '14px', zIndex: 100, display: 'flex', alignItems: 'center', gap: '8px',
+                        boxShadow: '0 4px 15px rgba(0,0,0,0.3)', animation: 'fadeIn 0.3s ease-out'
+                    }}>
+                        <Info size={18} />
+                        {captureStatus.message}
+                    </div>
+                )}
+                <span style={{ fontWeight: 'bold', fontSize: 'clamp(14px, 4vw, 18px)' }}>TreeMap AI</span>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '6px', marginRight: '20px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: 'clamp(8px, 2vw, 10px)', color: '#888', fontWeight: 'bold' }}>CURR. LOCATION</span>
-                            <Settings size={18} style={{ pointerEvents: 'auto', cursor: 'pointer', color: '#888' }} />
-                        </div>
-                        <div style={{
-                            padding: '8px 14px', backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)',
-                            borderRadius: '12px', border: '1px solid rgba(255,255,255,0.15)', fontFamily: 'monospace', fontSize: 'clamp(9px, 2.2vw, 11px)', textAlign: 'left', color: '#eee', minWidth: '140px'
-                        }}>
-                            Lat: {currentGps.lat.toFixed(6)}<br />
-                            Lon: {currentGps.lon.toFixed(6)}
-                        </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '6px', marginRight: '20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: 'clamp(8px, 2vw, 10px)', color: '#888', fontWeight: 'bold' }}>CURR. LOCATION</span>
+                        <Settings size={18} style={{ pointerEvents: 'auto', cursor: 'pointer', color: '#888' }} />
+                    </div>
+                    <div style={{
+                        padding: '8px 14px', backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)',
+                        borderRadius: '12px', border: '1px solid rgba(255,255,255,0.15)', fontFamily: 'monospace', fontSize: 'clamp(9px, 2.2vw, 11px)', textAlign: 'left', color: '#eee', minWidth: '140px'
+                    }}>
+                        Lat: {currentGps.lat.toFixed(6)}<br />
+                        Lon: {currentGps.lon.toFixed(6)}
                     </div>
                 </div>
-
-                {/* 촬영 버튼 (하단 좌측 25% 배치) */}
-                <div style={{ position: 'absolute', left: '25%', bottom: 'clamp(40px, 10vh, 80px)', transform: 'translateX(-50%)', zIndex: 40, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <button
-                        onClick={handleCapture}
-                        disabled={!isVertical}
-                        style={{
-                            width: 'clamp(70px, 18vw, 90px)',
-                            height: 'clamp(70px, 18vw, 90px)',
-                            borderRadius: '50%',
-                            backgroundColor: isVertical ? '#4caf50' : 'rgba(51, 51, 51, 0.8)',
-                            border: `3px solid ${isVertical ? '#fff' : 'rgba(255,255,255,0.2)'}`,
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            cursor: isVertical ? 'pointer' : 'not-allowed',
-                            transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                            boxShadow: isVertical ? '0 0 30px rgba(76, 175, 80, 0.6)' : 'none',
-                            transform: isVertical ? 'scale(1.1)' : 'scale(1)',
-                            pointerEvents: 'auto'
-                        }}
-                    >
-                        <Camera size={36} color="white" strokeWidth={2.5} />
-                    </button>
-                    <div style={{ marginTop: '12px', textAlign: 'center', fontSize: '10px', fontWeight: 'bold', color: isVertical ? '#4caf50' : '#888', textShadow: '0 2px 4px rgba(0,0,0,0.8)', letterSpacing: '0.5px' }}>
-                        {isVertical ? 'READY' : 'ALIGNING'}
-                    </div>
-                </div>
-
-                <canvas ref={canvasRef} style={{ display: 'none' }} />
             </div>
 
-            {/* 결과 상세 리포트 - 전체 화면 오버레이 스타일 */}
-            {measurement && (
-                <div style={{
-                    position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.95)',
-                    color: 'white', zIndex: 100, display: 'flex', flexDirection: 'column',
-                    padding: '20px', paddingBottom: 'env(safe-area-inset-bottom)', overflowY: 'auto'
-                }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', marginTop: 'env(safe-area-inset-top)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center' }}>
-                            <TreePine size={24} color="#4caf50" style={{ marginRight: '10px' }} />
-                            <h2 style={{ margin: 0, fontSize: '20px' }}>Tree Survey Report</h2>
+            {/* 촬영 버튼 (하단 좌측 25% 배치) */}
+            <div style={{ position: 'absolute', left: '25%', bottom: 'clamp(40px, 10vh, 80px)', transform: 'translateX(-50%)', zIndex: 40, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <button
+                    onClick={handleCapture}
+                    disabled={!isVertical || captureStatus?.type === 'error'}
+                    style={{
+                        width: 'clamp(70px, 18vw, 90px)',
+                        height: 'clamp(70px, 18vw, 90px)',
+                        borderRadius: '50%',
+                        backgroundColor: (isVertical && !captureStatus) ? '#4caf50' : 'rgba(51, 51, 51, 0.8)',
+                        border: `3px solid ${(isVertical && !captureStatus) ? '#fff' : 'rgba(255,255,255,0.2)'}`,
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        cursor: (isVertical && !captureStatus) ? 'pointer' : 'not-allowed',
+                        transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                        boxShadow: (isVertical && !captureStatus) ? '0 0 30px rgba(76, 175, 80, 0.6)' : 'none',
+                        transform: (isVertical && !captureStatus) ? 'scale(1.1)' : 'scale(1)',
+                        pointerEvents: 'auto'
+                    }}
+                >
+                    <Camera size={36} color="white" strokeWidth={2.5} />
+                </button>
+                <div style={{ marginTop: '12px', textAlign: 'center', fontSize: '10px', fontWeight: 'bold', color: (isVertical && !captureStatus) ? '#4caf50' : '#888', textShadow: '0 2px 4px rgba(0,0,0,0.8)', letterSpacing: '0.5px' }}>
+                    {(isVertical && !captureStatus) ? 'READY' : 'WAITING'}
+                </div>
+            </div>
+
+            <canvas ref={canvasRef} style={{ display: 'none' }} />
+        </div>
+
+            {/* 결과 상세 리포트 - 전체 화면 오버레이 스타일 */ }
+    {
+        measurement && (
+            <div style={{
+                position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.95)',
+                color: 'white', zIndex: 100, display: 'flex', flexDirection: 'column',
+                padding: '20px', paddingBottom: 'env(safe-area-inset-bottom)', overflowY: 'auto'
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', marginTop: 'env(safe-area-inset-top)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <TreePine size={24} color="#4caf50" style={{ marginRight: '10px' }} />
+                        <h2 style={{ margin: 0, fontSize: '20px' }}>Tree Survey Report</h2>
+                    </div>
+                    <button onClick={() => setMeasurement(null)} style={{ border: 'none', backgroundColor: '#333', color: 'white', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}>Close</button>
+                </div>
+
+                {/* 캡처 사진 */}
+                <div style={{ width: '100%', borderRadius: '16px', overflow: 'hidden', marginBottom: '24px', border: '1px solid #444' }}>
+                    <img src={measurement.photo} alt="Tree Capture" style={{ width: '100%', display: 'block' }} />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                    {/* 1. 수목 분석 결과 (핵심) */}
+                    <div style={{ gridColumn: 'span 2', padding: '15px', backgroundColor: 'rgba(76, 175, 80, 0.1)', borderRadius: '12px', border: '1px solid rgba(76, 175, 80, 0.3)' }}>
+                        <div style={{ fontSize: '12px', color: '#4caf50', fontWeight: 'bold', marginBottom: '10px' }}>🌳 PRIMARY TREE ANALYSIS</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                            <div><span style={{ color: '#888', fontSize: '11px' }}>Species</span><div style={{ fontWeight: 'bold' }}>{measurement.tree.species}</div></div>
+                            <div><span style={{ color: '#888', fontSize: '11px' }}>DBH (흉고직경)</span><div style={{ fontWeight: 'bold', fontSize: '22px', color: '#4caf50' }}>{measurement.tree.dbh} cm</div></div>
+                            <div><span style={{ color: '#888', fontSize: '11px' }}>Height (수고)</span><div style={{ fontWeight: 'bold', fontSize: '18px' }}>{measurement.tree.height} m</div></div>
+                            <div><span style={{ color: '#888', fontSize: '11px' }}>Distance (직선거리)</span><div style={{ fontWeight: 'bold' }}>{measurement.tree.distance} m</div></div>
+                            <div><span style={{ color: '#888', fontSize: '11px' }}>Crown Width (수관폭)</span><div style={{ fontWeight: 'bold' }}>{measurement.tree.crownWidth} m</div></div>
+                            <div><span style={{ color: '#888', fontSize: '11px' }}>G. Clearance (지하고)</span><div style={{ fontWeight: 'bold' }}>{measurement.tree.groundClearance} m</div></div>
                         </div>
-                        <button onClick={() => setMeasurement(null)} style={{ border: 'none', backgroundColor: '#333', color: 'white', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}>Close</button>
                     </div>
 
-                    {/* 캡처 사진 */}
-                    <div style={{ width: '100%', borderRadius: '16px', overflow: 'hidden', marginBottom: '24px', border: '1px solid #444' }}>
-                        <img src={measurement.photo} alt="Tree Capture" style={{ width: '100%', display: 'block' }} />
+                    {/* 2. 기기 포즈 및 센서 (6축/중력) */}
+                    <div style={{ padding: '15px', backgroundColor: '#1e1e1e', borderRadius: '12px', border: '1px solid #333' }}>
+                        <div style={{ fontSize: '12px', color: '#ff9800', fontWeight: 'bold', marginBottom: '10px' }}>📐 DEVICE POSE & 6-AXIS</div>
+                        <div style={{ fontSize: '11px', fontFamily: 'monospace', lineHeight: 1.6 }}>
+                            <span style={{ color: '#ff9800' }}>Orientation:</span><br />
+                            Pitch: {measurement.pose.pitch}°<br />
+                            Roll: {measurement.pose.roll}°<br />
+                            Azimuth: {measurement.pose.heading}°<br />
+                            <div style={{ height: '8px' }} />
+                            <span style={{ color: '#ff9800' }}>Gravity Vector:</span><br />
+                            GX: {measurement.pose.gravity.x}<br />
+                            GY: {measurement.pose.gravity.y}<br />
+                            GZ: {measurement.pose.gravity.z}
+                        </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                        {/* 1. 수목 분석 결과 (핵심) */}
-                        <div style={{ gridColumn: 'span 2', padding: '15px', backgroundColor: 'rgba(76, 175, 80, 0.1)', borderRadius: '12px', border: '1px solid rgba(76, 175, 80, 0.3)' }}>
-                            <div style={{ fontSize: '12px', color: '#4caf50', fontWeight: 'bold', marginBottom: '10px' }}>🌳 PRIMARY TREE ANALYSIS</div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                <div><span style={{ color: '#888', fontSize: '11px' }}>Species</span><div style={{ fontWeight: 'bold' }}>{measurement.tree.species}</div></div>
-                                <div><span style={{ color: '#888', fontSize: '11px' }}>DBH (흉고직경)</span><div style={{ fontWeight: 'bold', fontSize: '22px', color: '#4caf50' }}>{measurement.tree.dbh} cm</div></div>
-                                <div><span style={{ color: '#888', fontSize: '11px' }}>Height (수고)</span><div style={{ fontWeight: 'bold', fontSize: '18px' }}>{measurement.tree.height} m</div></div>
-                                <div><span style={{ color: '#888', fontSize: '11px' }}>Distance (직선거리)</span><div style={{ fontWeight: 'bold' }}>{measurement.tree.distance} m</div></div>
-                                <div><span style={{ color: '#888', fontSize: '11px' }}>Crown Width (수관폭)</span><div style={{ fontWeight: 'bold' }}>{measurement.tree.crownWidth} m</div></div>
-                                <div><span style={{ color: '#888', fontSize: '11px' }}>G. Clearance (지하고)</span><div style={{ fontWeight: 'bold' }}>{measurement.tree.groundClearance} m</div></div>
-                            </div>
+                    {/* 3. 정밀 위치 및 조사 시각 */}
+                    <div style={{ padding: '15px', backgroundColor: '#1e1e1e', borderRadius: '12px', border: '1px solid #333' }}>
+                        <div style={{ fontSize: '12px', color: '#2196f3', fontWeight: 'bold', marginBottom: '10px' }}>📍 PRECISION GEODATA</div>
+                        <div style={{ fontSize: '11px', fontFamily: 'monospace', lineHeight: 1.6 }}>
+                            <span style={{ color: '#2196f3' }}>Current GPS:</span><br />{measurement.gps.current.lat.toFixed(6)}, {measurement.gps.current.lon.toFixed(6)}<br />
+                            <span style={{ color: '#2196f3' }}>Target GPS:</span><br />{measurement.gps.target.lat.toFixed(6)}, {measurement.gps.target.lon.toFixed(6)}<br />
+                            <div style={{ height: '8px' }} />
+                            <span style={{ color: '#888' }}>Survey Time:</span><br />{measurement.solarInfo.time}<br />
+                            <span style={{ color: '#888' }}>Solar Alt:</span><br />{measurement.solarInfo.sunAltitude}
                         </div>
+                    </div>
 
-                        {/* 2. 기기 포즈 및 센서 (6축/중력) */}
-                        <div style={{ padding: '15px', backgroundColor: '#1e1e1e', borderRadius: '12px', border: '1px solid #333' }}>
-                            <div style={{ fontSize: '12px', color: '#ff9800', fontWeight: 'bold', marginBottom: '10px' }}>📐 DEVICE POSE & 6-AXIS</div>
-                            <div style={{ fontSize: '11px', fontFamily: 'monospace', lineHeight: 1.6 }}>
-                                <span style={{ color: '#ff9800' }}>Orientation:</span><br />
-                                Pitch: {measurement.pose.pitch}°<br />
-                                Roll: {measurement.pose.roll}°<br />
-                                Azimuth: {measurement.pose.heading}°<br />
-                                <div style={{ height: '8px' }} />
-                                <span style={{ color: '#ff9800' }}>Gravity Vector:</span><br />
-                                GX: {measurement.pose.gravity.x}<br />
-                                GY: {measurement.pose.gravity.y}<br />
-                                GZ: {measurement.pose.gravity.z}
-                            </div>
-                        </div>
-
-                        {/* 3. 정밀 위치 및 조사 시각 */}
-                        <div style={{ padding: '15px', backgroundColor: '#1e1e1e', borderRadius: '12px', border: '1px solid #333' }}>
-                            <div style={{ fontSize: '12px', color: '#2196f3', fontWeight: 'bold', marginBottom: '10px' }}>📍 PRECISION GEODATA</div>
-                            <div style={{ fontSize: '11px', fontFamily: 'monospace', lineHeight: 1.6 }}>
-                                <span style={{ color: '#2196f3' }}>Current GPS:</span><br />{measurement.gps.current.lat.toFixed(6)}, {measurement.gps.current.lon.toFixed(6)}<br />
-                                <span style={{ color: '#2196f3' }}>Target GPS:</span><br />{measurement.gps.target.lat.toFixed(6)}, {measurement.gps.target.lon.toFixed(6)}<br />
-                                <div style={{ height: '8px' }} />
-                                <span style={{ color: '#888' }}>Survey Time:</span><br />{measurement.solarInfo.time}<br />
-                                <span style={{ color: '#888' }}>Solar Alt:</span><br />{measurement.solarInfo.sunAltitude}
-                            </div>
-                        </div>
-
-                        {/* 4. 이미지 분석 및 광학 메타데이터 */}
-                        <div style={{ gridColumn: 'span 2', padding: '15px', backgroundColor: '#1e1e1e', borderRadius: '12px', border: '1px solid #333' }}>
-                            <div style={{ fontSize: '12px', color: '#9c27b0', fontWeight: 'bold', marginBottom: '10px' }}>📸 OPTICAL & PIXEL DATA</div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                                <div>
-                                    <span style={{ color: '#888', fontSize: '11px' }}>EXIF Constants</span>
-                                    <div style={{ fontSize: '10px', color: '#aaa', marginTop: '4px' }}>
-                                        Focal: {measurement.exif.focalLength}<br />
-                                        Sensor: {measurement.exif.sensorSize}<br />
-                                        Res: {measurement.exif.resolution}
-                                    </div>
+                    {/* 4. 이미지 분석 및 광학 메타데이터 */}
+                    <div style={{ gridColumn: 'span 2', padding: '15px', backgroundColor: '#1e1e1e', borderRadius: '12px', border: '1px solid #333' }}>
+                        <div style={{ fontSize: '12px', color: '#9c27b0', fontWeight: 'bold', marginBottom: '10px' }}>📸 OPTICAL & PIXEL DATA</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                            <div>
+                                <span style={{ color: '#888', fontSize: '11px' }}>EXIF Constants</span>
+                                <div style={{ fontSize: '10px', color: '#aaa', marginTop: '4px' }}>
+                                    Focal: {measurement.exif.focalLength}<br />
+                                    Sensor: {measurement.exif.sensorSize}<br />
+                                    Res: {measurement.exif.resolution}
                                 </div>
-                                <div>
-                                    <span style={{ color: '#888', fontSize: '11px' }}>H-Target Pixel (1.2m)</span>
-                                    <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#9c27b0', marginTop: '4px' }}>
-                                        X: {measurement.tree.targetPointPixel.x} px<br />
-                                        Y: {measurement.tree.targetPointPixel.y} px
-                                    </div>
+                            </div>
+                            <div>
+                                <span style={{ color: '#888', fontSize: '11px' }}>H-Target Pixel (1.2m)</span>
+                                <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#9c27b0', marginTop: '4px' }}>
+                                    X: {measurement.tree.targetPointPixel.x} px<br />
+                                    Y: {measurement.tree.targetPointPixel.y} px
                                 </div>
-                                <div style={{ gridColumn: 'span 2' }}>
-                                    <span style={{ color: '#888', fontSize: '11px' }}>Stability Log (Pre-Capture 1sec)</span>
-                                    <div style={{ fontSize: '9px', color: '#666', overflowX: 'auto', whiteSpace: 'nowrap', backgroundColor: '#111', padding: '5px', marginTop: '4px' }}>
-                                        [{measurement.sensorLog.slice(0, 3).map(l => `[${l.a.y.toFixed(2)}m/s²]`).join(', ')} ... stability checked]
-                                    </div>
+                            </div>
+                            <div style={{ gridColumn: 'span 2' }}>
+                                <span style={{ color: '#888', fontSize: '11px' }}>Stability Log (Pre-Capture 1sec)</span>
+                                <div style={{ fontSize: '9px', color: '#666', overflowX: 'auto', whiteSpace: 'nowrap', backgroundColor: '#111', padding: '5px', marginTop: '4px' }}>
+                                    [{measurement.sensorLog.slice(0, 3).map(l => `[${l.a.y.toFixed(2)}m/s²]`).join(', ')} ... stability checked]
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            )}
+            </div>
+        )
+    }
         </div >
     );
 };
