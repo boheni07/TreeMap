@@ -215,15 +215,7 @@ const TreeSurveySimulator = () => {
                 </div>
 
                 {/* 하단 제어부 - Safe Area 하단 여백 및 터치 최적화 */}
-                <div style={{ position: 'absolute', bottom: 0, width: '100%', padding: '20px 20px clamp(30px, 8vh, 60px) 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)', zIndex: 30 }}>
-                    <div style={{ marginBottom: 'clamp(15px, 3vh, 25px)', width: '85%', maxWidth: '400px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                            <label style={{ fontSize: 'clamp(10px, 2.5vw, 12px)', color: '#ccc' }}>Sensor Angle</label>
-                            <span style={{ fontSize: '12px', fontWeight: 'bold', color: isVertical ? '#4caf50' : 'white' }}>{angle.toFixed(1)}°</span>
-                        </div>
-                        <input type="range" min="60" max="120" step="0.1" value={angle} onChange={(e) => setAngle(parseFloat(e.target.value))} style={{ width: '100%', cursor: 'pointer', height: '30px' }} />
-                    </div>
-
+                <div style={{ position: 'absolute', bottom: 0, width: '100%', padding: '20px 20px clamp(40px, 10vh, 80px) 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)', zIndex: 30 }}>
                     <button
                         onClick={handleCapture}
                         disabled={!isVertical}
