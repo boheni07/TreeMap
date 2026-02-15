@@ -71,18 +71,19 @@ const TreeSurveySimulator = () => {
         // 3. 자이로 센서 (DeviceOrientation) 연동
         let lastAngle = 90;
         let lastRollValue = 0;
-        const smoothingFactor = 0.08; // 감도
-        const stepUnit = 0.5; // 단계별 이동
+        const smoothingFactor = 0.05; // 극한의 묵직한(Damped) 이동을 위해 감도 하향
+        const stepUnit = 0.5; // 단계별 이동 단위
+        const magnetThreshold = 2.0; // 자석 효과 범위 (더 강력하게 센터에 붙음)
 
         const handleOrientation = (e: DeviceOrientationEvent) => {
             if (e.alpha !== null) setHeading(e.alpha);
 
             if (e.beta !== null) {
                 const smoothed = (e.beta * smoothingFactor) + (lastAngle * (1 - smoothingFactor));
-                setRawAngle(smoothed); // 거리 계산용 정밀 각도 (스냅 없음)
+                setRawAngle(smoothed); // 정밀 거리 계산용 (스냅 없음)
 
                 let stepped = Math.round(smoothed / stepUnit) * stepUnit;
-                if (Math.abs(stepped - 90) < 1.0) stepped = 90; // UI용 스냅
+                if (Math.abs(stepped - 90) < magnetThreshold) stepped = 90; // 강력한 자석 효과
                 setAngle(stepped);
 
                 // 흔들림(Motion) 계산
@@ -94,7 +95,7 @@ const TreeSurveySimulator = () => {
             if (e.gamma !== null) {
                 const smoothedValue = (e.gamma * smoothingFactor) + (lastRollValue * (1 - smoothingFactor));
                 let stepped = Math.round(smoothedValue / stepUnit) * stepUnit;
-                if (Math.abs(stepped) < 1.5) stepped = 0;
+                if (Math.abs(stepped) < magnetThreshold) stepped = 0; // 강력한 자석 효과
                 setRoll(stepped);
                 lastRollValue = smoothedValue;
             }
