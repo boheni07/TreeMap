@@ -3,17 +3,22 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// Leaflet 기본 마커 아이콘 설정 (React 환경에서는 아이콘 경로 문제로 수동 설정이 필요할 수 있음)
+// Leaflet 기본 마커 아이콘 설정
 // @ts-ignore
 import icon from 'leaflet/dist/images/marker-icon.png';
+// @ts-ignore
+import iconRetina from 'leaflet/dist/images/marker-icon-2x.png';
 // @ts-ignore
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
 let DefaultIcon = L.icon({
     iconUrl: icon,
+    iconRetinaUrl: iconRetina,
     shadowUrl: iconShadow,
     iconSize: [25, 41],
-    iconAnchor: [12, 41]
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
@@ -48,7 +53,12 @@ const TreeViewMap = () => {
             const response = await fetch('http://localhost:8000/api/measurements');
             if (response.ok) {
                 const data = await response.json();
-                setTrees(data);
+                // 유효한 좌표가 있는 데이터만 필터링
+                const validTrees = data.filter((t: any) =>
+                    t.latitude !== null && t.longitude !== null &&
+                    t.latitude !== 0 && t.longitude !== 0
+                );
+                setTrees(validTrees);
             }
         } catch (error) {
             console.error('Failed to fetch trees:', error);
@@ -75,7 +85,7 @@ const TreeViewMap = () => {
             <MapContainer
                 center={mapCenter}
                 zoom={16}
-                style={{ width: '100%', height: '100%' }}
+                style={{ width: '100%', height: '100%', minHeight: '100%' }}
                 zoomControl={false}
             >
                 <TileLayer
