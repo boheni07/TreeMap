@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Camera, Settings, TreePine, Info } from 'lucide-react';
 
 const TreeSurveySimulator = () => {
-    const [angle, setAngle] = useState(90);
+    const [angle, setAngle] = useState(90); // pitch (vertical)
+    const [roll, setRoll] = useState(0);    // roll (horizontal)
     const [userHeight, setUserHeight] = useState(1.7);
     const [isVertical, setIsVertical] = useState(true);
     const [measurement, setMeasurement] = useState<{ dbh: number; height: number; species: string } | null>(null);
@@ -41,12 +42,11 @@ const TreeSurveySimulator = () => {
         const handleOrientation = (e: DeviceOrientationEvent) => {
             if (e.alpha !== null) setHeading(e.alpha);
 
-            // beta: 앞뒤 기울기 (-180 ~ 180), 기기를 세웠을 때 약 90도
-            if (e.beta !== null) {
-                // 부드러운 움직임을 위해 일부 보정하거나 그대로 사용
-                // 여기서는 시뮬레이터 로직에 맞게 beta 값을 angle로 직접 사용
-                setAngle(e.beta);
-            }
+            // beta: 앞뒤 기울기 (Pitch), 기기를 세웠을 때 약 90도
+            if (e.beta !== null) setAngle(e.beta);
+
+            // gamma: 좌우 기울기 (Roll), 수평일 때 0도
+            if (e.gamma !== null) setRoll(e.gamma);
         };
 
         // 권한 요청 처리 (iOS 13+ 대응)
@@ -77,9 +77,11 @@ const TreeSurveySimulator = () => {
     }, []);
 
     useEffect(() => {
-        // 자석 효과: 1.5도 이내면 수직(isVertical)으로 판단
-        setIsVertical(Math.abs(angle - 90) < 1.5);
-    }, [angle]);
+        // 자석 효과 및 수직 상태 판단: Pitch와 Roll이 모두 임계값(1.5도) 이내면 활성화
+        const pitchInLimit = Math.abs(angle - 90) < 1.5;
+        const rollInLimit = Math.abs(roll) < 1.5;
+        setIsVertical(pitchInLimit && rollInLimit);
+    }, [angle, roll]);
 
     // 실시간 거리 계산
     const currentDistance = (userHeight - 1.2) / Math.tan(Math.max(0.01, (angle - 90) * Math.PI / 180));
@@ -202,9 +204,12 @@ const TreeSurveySimulator = () => {
                                     ? 'radial-gradient(circle at 35% 35%, #e8f5e9, #4caf50 70%, #1b5e20)'
                                     : 'radial-gradient(circle at 35% 35%, #ffebee, #f44336 70%, #b71c1c)',
                                 borderRadius: '50%',
-                                transition: 'transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1)',
-                                transform: `translateY(${Math.abs(angle - 90) < 1.5 ? 0 : (angle - 90) * 4}px)`,
-                                boxShadow: `0 4px 12px rgba(0,0,0,0.5), inset -2px -2px 6px rgba(0,0,0,0.3), ${isVertical ? '0 0 20px rgba(76, 175, 80, 0.8)' : '0 0 20px rgba(244, 67, 54, 0.8)'}`,
+                                transition: 'transform 0.1s cubic-bezier(0.2, 0.8, 0.2, 1)',
+                                transform: `translate(
+                                    ${Math.abs(roll) < 1.5 ? 0 : roll * 3}px, 
+                                    ${Math.abs(angle - 90) < 1.5 ? 0 : (angle - 90) * 4}px
+                                )`,
+                                boxShadow: `0 4px 12px rgba(0,0,0,0.5), inset -2px -2px 6px rgba(0,0,0,0.3), ${isVertical ? '0 0 25px rgba(76, 175, 80, 0.9)' : '0 0 20px rgba(244, 67, 54, 0.8)'}`,
                                 zIndex: 1,
                                 position: 'relative',
                                 overflow: 'hidden'
