@@ -10,6 +10,7 @@ const TreeSurveySimulator = () => {
     const [heading, setHeading] = useState(0); // 북쪽 기준 방위각
     const [lux, setLux] = useState(650);       // 시뮬레이션 조도
     const [motionLevel, setMotionLevel] = useState(0); // 흔들림 정도
+    const [rawAngle, setRawAngle] = useState(90);      // 스냅되지 않은 정밀 각도
     const [captureStatus, setCaptureStatus] = useState<{ type: 'warning' | 'error' | 'success', message: string } | null>(null);
 
     const [measurement, setMeasurement] = useState<{
@@ -78,8 +79,10 @@ const TreeSurveySimulator = () => {
 
             if (e.beta !== null) {
                 const smoothed = (e.beta * smoothingFactor) + (lastAngle * (1 - smoothingFactor));
+                setRawAngle(smoothed); // 거리 계산용 정밀 각도 (스냅 없음)
+
                 let stepped = Math.round(smoothed / stepUnit) * stepUnit;
-                if (Math.abs(stepped - 90) < 1.5) stepped = 90;
+                if (Math.abs(stepped - 90) < 1.0) stepped = 90; // UI용 스냅
                 setAngle(stepped);
 
                 // 흔들림(Motion) 계산
@@ -127,7 +130,16 @@ const TreeSurveySimulator = () => {
         }
     }, [angle, roll, lux, motionLevel]);
 
-    const currentDistance = (userHeight - 1.2) / Math.tan(Math.max(0.01, (angle - 90) * Math.PI / 180));
+    const currentDistance = React.useMemo(() => {
+        const diff = userHeight - 1.2;
+        const tiltFromHorizontal = rawAngle - 90;
+
+        // 조준점이 수평 이하로 0.3도 이상 내려갔을 때만 거리 계산 (수평 근처는 무한대 방지)
+        if (tiltFromHorizontal < 0.3) return 0;
+
+        const d = diff / Math.tan(tiltFromHorizontal * Math.PI / 180);
+        return Math.min(Math.max(0, d), 50); // 최대 50m로 제한하여 안정성 확보
+    }, [rawAngle, userHeight]);
 
     const calculateTargetGps = () => {
         const R = 6378137;
@@ -264,7 +276,7 @@ const TreeSurveySimulator = () => {
                         <span style={{ fontSize: 'clamp(8px, 2vw, 10px)', color: '#888', fontWeight: 'bold', letterSpacing: '0.5px', marginBottom: '2px' }}>DISTANCE</span>
                         <div style={{ display: 'flex', alignItems: 'baseline' }}>
                             <span style={{ fontSize: 'clamp(20px, 5vw, 28px)', fontWeight: 'bold', color: isVertical ? '#4caf50' : 'white', fontFamily: 'monospace' }}>
-                                {currentDistance.toFixed(1)}
+                                {currentDistance > 0 ? currentDistance.toFixed(1) : '---'}
                             </span>
                             <span style={{ fontSize: 'clamp(10px, 2.5vw, 12px)', marginLeft: 3, color: '#666' }}>m</span>
                         </div>
