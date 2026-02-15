@@ -1,0 +1,9 @@
+{
+    "name": "treemap-root",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+        "install-sim": "cd simulation && npm install",
+        "build-sim": "cd simulation && npm run build"
+    }
+}
