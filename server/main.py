@@ -1,14 +1,23 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+import models, schemas, database
+from database import engine, get_db
 from typing import List
-
-from . import models, schemas, database
-from .database import engine, get_db
 
 # 데이터베이스 테이블 생성
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="TreeMap Backend API")
+
+# CORS 설정
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # 실제 운영환경에서는 특정 도메인만 허용하도록 권장
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 def read_root():

@@ -11,6 +11,8 @@ import { LevelBubble } from './components/LevelBubble';
 import { MeasurementOverlay } from './components/MeasurementOverlay';
 import { CaptureStatus } from './components/CaptureStatus';
 import { SurveyReport } from './components/SurveyReport';
+import TreeViewMap from './components/TreeViewMap';
+import { Map as MapIcon } from 'lucide-react';
 
 // Utils
 import { calculateDistance, calculateTargetGps, calculateDbh, calculateTreeHeight } from './utils/measurementUtils';
@@ -26,6 +28,7 @@ const TreeSurveySimulator = () => {
     const [isVertical, setIsVertical] = useState(true);
     const [captureStatus, setCaptureStatus] = useState<{ type: 'warning' | 'error' | 'success', message: string } | null>(null);
     const [measurement, setMeasurement] = useState<any | null>(null);
+    const [activeView, setActiveView] = useState<'camera' | 'map'>('camera');
 
     const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
@@ -150,32 +153,62 @@ const TreeSurveySimulator = () => {
             position: 'relative', overflow: 'hidden'
         }}>
             <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-                <video ref={videoRef} autoPlay playsInline muted style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover' }} />
+                {activeView === 'camera' ? (
+                    <>
+                        <video ref={videoRef} autoPlay playsInline muted style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover' }} />
 
-                <CaptureStatus status={captureStatus} />
+                        <CaptureStatus status={captureStatus} />
 
-                {/* 가이드 라인 */}
-                <div style={{ position: 'absolute', top: 0, bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '80%', height: '100%', opacity: 0.5, pointerEvents: 'none', display: 'flex', justifyContent: 'center', alignItems: 'stretch' }}>
-                    <svg viewBox="0 0 200 400" preserveAspectRatio="none" style={{ width: '100%', height: '100%' }}>
-                        <path d="M80 400 L80 280 Q80 260 60 250 Q20 230 20 160 Q20 0 100 0 Q180 0 180 160 Q180 230 140 250 Q120 260 120 280 L120 400" fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="1.5" strokeDasharray="6,6" />
-                        <line x1="100" y1="0" x2="100" y2="400" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
-                    </svg>
-                </div>
+                        {/* 가이드 라인 */}
+                        <div style={{ position: 'absolute', top: 0, bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '80%', height: '100%', opacity: 0.5, pointerEvents: 'none', display: 'flex', justifyContent: 'center', alignItems: 'stretch' }}>
+                            <svg viewBox="0 0 200 400" preserveAspectRatio="none" style={{ width: '100%', height: '100%' }}>
+                                <path d="M80 400 L80 280 Q80 260 60 250 Q20 230 20 160 Q20 0 100 0 Q180 0 180 160 Q180 230 140 250 Q120 260 120 280 L120 400" fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="1.5" strokeDasharray="6,6" />
+                                <line x1="100" y1="0" x2="100" y2="400" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
+                            </svg>
+                        </div>
 
-                <MeasurementOverlay distance={currentDistance} targetGps={targetGps} isVertical={isVertical} />
+                        <MeasurementOverlay distance={currentDistance} targetGps={targetGps} isVertical={isVertical} />
 
-                {/* 센터 포인트 */}
-                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 12, pointerEvents: 'none' }}>
-                    <div style={{ position: 'relative', width: '40px', height: '40px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                        <div style={{ position: 'absolute', width: '100%', height: '3px', backgroundColor: '#ff5252', boxShadow: '0 0 10px rgba(255, 82, 82, 0.8)' }} />
-                        <div style={{ position: 'absolute', height: '100%', width: '3px', backgroundColor: '#ff5252', boxShadow: '0 0 10px rgba(255, 82, 82, 0.8)' }} />
-                    </div>
-                </div>
+                        {/* 센터 포인트 */}
+                        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 12, pointerEvents: 'none' }}>
+                            <div style={{ position: 'relative', width: '40px', height: '40px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                <div style={{ position: 'absolute', width: '100%', height: '3px', backgroundColor: '#ff5252', boxShadow: '0 0 10px rgba(255, 82, 82, 0.8)' }} />
+                                <div style={{ position: 'absolute', height: '100%', width: '3px', backgroundColor: '#ff5252', boxShadow: '0 0 10px rgba(255, 82, 82, 0.8)' }} />
+                            </div>
+                        </div>
 
-                <LevelBubble angle={angle} roll={roll} isVertical={isVertical} />
+                        <LevelBubble angle={angle} roll={roll} isVertical={isVertical} />
+
+                        {/* 촬영 버튼 */}
+                        <div style={{ position: 'absolute', left: '25%', bottom: '10px', transform: 'translateX(-50%)', zIndex: 40, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <button
+                                onClick={handleCapture}
+                                disabled={!isVertical || captureStatus?.type === 'error'}
+                                style={{
+                                    width: 'clamp(70px, 18vw, 90px)', height: 'clamp(70px, 18vw, 90px)', borderRadius: '50%',
+                                    backgroundColor: (isVertical && !captureStatus) ? '#4caf50' : 'rgba(51, 51, 51, 0.8)',
+                                    border: `3px solid ${(isVertical && !captureStatus) ? '#fff' : 'rgba(255,255,255,0.2)'}`,
+                                    display: 'flex', justifyContent: 'center', alignItems: 'center',
+                                    cursor: (isVertical && !captureStatus) ? 'pointer' : 'not-allowed',
+                                    transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                                    boxShadow: (isVertical && !captureStatus) ? '0 0 30px rgba(76, 175, 80, 0.6)' : 'none',
+                                    transform: (isVertical && !captureStatus) ? 'scale(1.1)' : 'scale(1)',
+                                    pointerEvents: 'auto'
+                                }}
+                            >
+                                <Camera size={36} color="white" strokeWidth={2.5} />
+                            </button>
+                            <div style={{ marginTop: '12px', textAlign: 'center', fontSize: '10px', fontWeight: 'bold', color: (isVertical && !captureStatus) ? '#4caf50' : '#888', textShadow: '0 2px 4px rgba(0,0,0,0.8)', letterSpacing: '0.5px' }}>
+                                {(isVertical && !captureStatus) ? 'READY' : 'WAITING'}
+                            </div>
+                        </div>
+                    </>
+                ) : (
+                    <TreeViewMap />
+                )}
 
                 {/* 상단바 */}
-                <div style={{ position: 'absolute', top: 0, width: '100%', padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', background: 'linear-gradient(to bottom, rgba(0,0,0,0.8), transparent)', pointerEvents: 'none', zIndex: 30 }}>
+                <div style={{ position: 'absolute', top: 0, width: '100%', padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', background: 'linear-gradient(to bottom, rgba(0,0,0,0.8), transparent)', pointerEvents: 'none', zIndex: 1001 }}>
                     <span style={{ fontWeight: 'bold', fontSize: '18px', color: 'rgba(255,255,255,0.7)' }}>TreeMap AI</span>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -192,28 +225,33 @@ const TreeSurveySimulator = () => {
                     </div>
                 </div>
 
-                {/* 촬영 버튼 */}
-                <div style={{ position: 'absolute', left: '25%', bottom: '10px', transform: 'translateX(-50%)', zIndex: 40, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                {/* 뷰 전환 하단 탭 */}
+                <div style={{
+                    position: 'absolute', right: '20px', bottom: '20px', zIndex: 1002,
+                    display: 'flex', flexDirection: 'column', gap: '10px'
+                }}>
                     <button
-                        onClick={handleCapture}
-                        disabled={!isVertical || captureStatus?.type === 'error'}
+                        onClick={() => setActiveView('camera')}
                         style={{
-                            width: 'clamp(70px, 18vw, 90px)', height: 'clamp(70px, 18vw, 90px)', borderRadius: '50%',
-                            backgroundColor: (isVertical && !captureStatus) ? '#4caf50' : 'rgba(51, 51, 51, 0.8)',
-                            border: `3px solid ${(isVertical && !captureStatus) ? '#fff' : 'rgba(255,255,255,0.2)'}`,
-                            display: 'flex', justifyContent: 'center', alignItems: 'center',
-                            cursor: (isVertical && !captureStatus) ? 'pointer' : 'not-allowed',
-                            transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                            boxShadow: (isVertical && !captureStatus) ? '0 0 30px rgba(76, 175, 80, 0.6)' : 'none',
-                            transform: (isVertical && !captureStatus) ? 'scale(1.1)' : 'scale(1)',
-                            pointerEvents: 'auto'
+                            width: '50px', height: '50px', borderRadius: '12px',
+                            backgroundColor: activeView === 'camera' ? '#4caf50' : 'rgba(0,0,0,0.7)',
+                            border: '1px solid rgba(255,255,255,0.2)', color: 'white',
+                            display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer'
                         }}
                     >
-                        <Camera size={36} color="white" strokeWidth={2.5} />
+                        <Camera size={24} />
                     </button>
-                    <div style={{ marginTop: '12px', textAlign: 'center', fontSize: '10px', fontWeight: 'bold', color: (isVertical && !captureStatus) ? '#4caf50' : '#888', textShadow: '0 2px 4px rgba(0,0,0,0.8)', letterSpacing: '0.5px' }}>
-                        {(isVertical && !captureStatus) ? 'READY' : 'WAITING'}
-                    </div>
+                    <button
+                        onClick={() => setActiveView('map')}
+                        style={{
+                            width: '50px', height: '50px', borderRadius: '12px',
+                            backgroundColor: activeView === 'map' ? '#4caf50' : 'rgba(0,0,0,0.7)',
+                            border: '1px solid rgba(255,255,255,0.2)', color: 'white',
+                            display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer'
+                        }}
+                    >
+                        <MapIcon size={24} />
+                    </button>
                 </div>
 
                 <canvas ref={canvasRef} style={{ display: 'none' }} />
