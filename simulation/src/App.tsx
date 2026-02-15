@@ -39,14 +39,25 @@ const TreeSurveySimulator = () => {
         );
 
         // 3. 자이로 센서 (DeviceOrientation) 연동
+        let lastAngle = 90;
+        let lastRoll = 0;
+        const smoothingFactor = 0.15; // 손떨림 방지 감도 (0~1, 낮을수록 더 부드러움)
+
         const handleOrientation = (e: DeviceOrientationEvent) => {
             if (e.alpha !== null) setHeading(e.alpha);
 
-            // beta: 앞뒤 기울기 (Pitch), 기기를 세웠을 때 약 90도
-            if (e.beta !== null) setAngle(e.beta);
+            // Pitch (beta) & Roll (gamma) - 저역 통과 필터(LPF) 적용하여 떨림 방지
+            if (e.beta !== null) {
+                const smoothedAngle = (e.beta * smoothingFactor) + (lastAngle * (1 - smoothingFactor));
+                setAngle(smoothedAngle);
+                lastAngle = smoothedAngle;
+            }
 
-            // gamma: 좌우 기울기 (Roll), 수평일 때 0도
-            if (e.gamma !== null) setRoll(e.gamma);
+            if (e.gamma !== null) {
+                const smoothedRoll = (e.gamma * smoothingFactor) + (lastRoll * (1 - smoothingFactor));
+                setRoll(smoothedRoll);
+                lastRoll = smoothedRoll;
+            }
         };
 
         // 권한 요청 처리 (iOS 13+ 대응)
