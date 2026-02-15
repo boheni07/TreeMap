@@ -303,8 +303,9 @@ const TreeSurveySimulator = () => {
                         }}>
                             <div style={{ position: 'absolute', width: '100%', height: 1.5, backgroundColor: 'rgba(255,255,255,0.2)' }} />
                             <div style={{ position: 'absolute', height: '100%', width: 1.5, backgroundColor: 'rgba(255,255,255,0.2)' }} />
-                            <div style={{ position: 'absolute', width: '35%', height: 3, backgroundColor: isVertical ? '#4caf50' : '#ff5252', boxShadow: `0 0 15px ${isVertical ? '#4caf50' : '#ff5252'}`, zIndex: 2 }} />
-                            <div style={{ position: 'absolute', height: '35%', width: 3, backgroundColor: isVertical ? '#4caf50' : '#ff5252', boxShadow: `0 0 15px ${isVertical ? '#4caf50' : '#ff5252'}`, zIndex: 2 }} />
+                            {/* 센터 포인트: 빨간색 + 표식 */}
+                            <div style={{ position: 'absolute', width: '40%', height: 3.5, backgroundColor: '#ff5252', boxShadow: '0 0 10px rgba(255, 82, 82, 0.8)', zIndex: 2 }} />
+                            <div style={{ position: 'absolute', height: '40%', width: 3.5, backgroundColor: '#ff5252', boxShadow: '0 0 10px rgba(255, 82, 82, 0.8)', zIndex: 2 }} />
                             <div style={{
                                 width: '22%', height: '22%', borderRadius: '50%', transition: 'transform 0.1s cubic-bezier(0.2, 0.8, 0.2, 1)',
                                 background: isVertical ? 'radial-gradient(circle at 35% 35%, #e8f5e9, #4caf50 70%, #1b5e20)' : 'radial-gradient(circle at 35% 35%, #ffebee, #f44336 70%, #b71c1c)',
