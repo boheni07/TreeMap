@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -20,7 +19,6 @@ let DefaultIcon = L.icon({
     popupAnchor: [1, -34],
     shadowSize: [41, 41]
 });
-L.Marker.prototype.options.icon = DefaultIcon;
 
 interface TreeData {
     id: number;
@@ -33,97 +31,152 @@ interface TreeData {
     measured_at: string;
 }
 
-// 지도를 특정 좌표로 이동시키는 컴포넌트
-const ChangeView = ({ center }: { center: [number, number] }) => {
-    const map = useMap();
-    map.setView(center, 16);
-    return null;
-};
-
 const TreeViewMap = () => {
+    const mapRef = useRef<HTMLDivElement>(null);
+    const mapInstance = useRef<L.Map | null>(null);
+    const markersLayer = useRef<L.LayerGroup | null>(null);
+
     const [trees, setTrees] = useState<TreeData[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
+    // 1. 데이터 가져오기
     useEffect(() => {
+        const fetchTrees = async () => {
+            try {
+                const response = await fetch('http://localhost:8000/api/measurements');
+                if (response.ok) {
+                    const data = await response.json();
+                    const validTrees = data.filter((t: any) =>
+                        t.latitude !== null && t.longitude !== null &&
+                        t.latitude !== 0 && t.longitude !== 0
+                    );
+                    setTrees(validTrees);
+                }
+            } catch (error) {
+                console.error('Failed to fetch trees:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
         fetchTrees();
     }, []);
 
-    const fetchTrees = async () => {
-        try {
-            const response = await fetch('http://localhost:8000/api/measurements');
-            if (response.ok) {
-                const data = await response.json();
-                // 유효한 좌표가 있는 데이터만 필터링
-                const validTrees = data.filter((t: any) =>
-                    t.latitude !== null && t.longitude !== null &&
-                    t.latitude !== 0 && t.longitude !== 0
-                );
-                setTrees(validTrees);
+    // 2. 지도 초기화 (컨테이너가 DOM에 상주하므로 로딩 상태와 관계없이 안전하게 체크)
+    useEffect(() => {
+        if (!mapRef.current || mapInstance.current) return;
+
+        console.log("Initializing Leaflet map...");
+
+        // 지도 객체 생성
+        const map = L.map(mapRef.current, {
+            zoomControl: false,
+            center: [37.5665, 126.9780],
+            zoom: 16
+        });
+
+        // 타일 레이어 추가
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        // 마커 레이어 그룹 생성
+        const layerGroup = L.layerGroup().addTo(map);
+
+        mapInstance.current = map;
+        markersLayer.current = layerGroup;
+
+        // 즉시 크기 보정
+        map.invalidateSize();
+
+        return () => {
+            if (mapInstance.current) {
+                mapInstance.current.remove();
+                mapInstance.current = null;
             }
-        } catch (error) {
-            console.error('Failed to fetch trees:', error);
-        } finally {
-            setIsLoading(false);
+        };
+    }, []);
+
+    // 3. 로딩이 끝났을 때 지도 크기 재인식
+    useEffect(() => {
+        if (!isLoading && mapInstance.current) {
+            setTimeout(() => {
+                mapInstance.current?.invalidateSize();
+            }, 50);
         }
-    };
+    }, [isLoading]);
 
-    // 초기 중심 좌표 (데이터가 없으면 서울 중심, 있으면 가장 최근 데이터 기준)
-    const mapCenter: [number, number] = trees.length > 0
-        ? [trees[trees.length - 1].latitude, trees[trees.length - 1].longitude]
-        : [37.5665, 126.9780];
+    // 4. 데이터 변경 시 마커 업데이트 및 시점 이동
+    useEffect(() => {
+        if (!mapInstance.current || !markersLayer.current) return;
 
-    if (isLoading) {
-        return (
-            <div style={{ width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#1a1a1a', color: '#fff' }}>
-                지도 데이터를 불러오는 중...
-            </div>
-        );
-    }
+        // 기존 마커 제거
+        markersLayer.current.clearLayers();
+
+        if (trees.length > 0) {
+            trees.forEach(tree => {
+                const popupContent = `
+                    <div style="min-width: 150px;">
+                        <h3 style="margin: 0 0 10px 0; borderBottom: 1px solid #ddd; padding-bottom: 5px;">${tree.species}</h3>
+                        <div style="font-size: 13px; line-height: 1.6;">
+                            <strong>ID:</strong> ${tree.id}<br />
+                            <strong>흉고직경 (DBH):</strong> ${tree.dbh} cm<br />
+                            <strong>수고:</strong> ${tree.height} m<br />
+                            <strong>측정일:</strong> ${new Date(tree.measured_at).toLocaleDateString()}<br />
+                            <span style="font-size: 11px; color: #666;">Lat: ${tree.latitude.toFixed(6)}</span>
+                        </div>
+                    </div>
+                `;
+
+                L.marker([tree.latitude, tree.longitude], { icon: DefaultIcon })
+                    .bindPopup(popupContent)
+                    .addTo(markersLayer.current!);
+            });
+
+            // 마지막 데이터 위치로 시점 이동
+            const lastTree = trees[trees.length - 1];
+            mapInstance.current.setView([lastTree.latitude, lastTree.longitude], mapInstance.current.getZoom());
+        }
+    }, [trees]);
 
     return (
-        <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-            <MapContainer
-                center={mapCenter}
-                zoom={16}
-                style={{ width: '100%', height: '100%', minHeight: '100%' }}
-                zoomControl={false}
-            >
-                <TileLayer
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                />
-                <ChangeView center={mapCenter} />
-                {trees.map((tree) => (
-                    <Marker key={tree.id} position={[tree.latitude, tree.longitude]}>
-                        <Popup>
-                            <div style={{ minWidth: '150px' }}>
-                                <h3 style={{ margin: '0 0 10px 0', borderBottom: '1px solid #ddd', paddingBottom: '5px' }}>{tree.species}</h3>
-                                <div style={{ fontSize: '13px', lineHeight: '1.6' }}>
-                                    <strong>ID:</strong> {tree.id}<br />
-                                    <strong>흉고직경 (DBH):</strong> {tree.dbh} cm<br />
-                                    <strong>수고:</strong> {tree.height} m<br />
-                                    <strong>건강도:</strong> {tree.health_score} 점<br />
-                                    <strong>측정일:</strong> {new Date(tree.measured_at).toLocaleDateString()}<br />
-                                    <span style={{ fontSize: '11px', color: '#666' }}>Lat: {tree.latitude.toFixed(6)}, Lon: {tree.longitude.toFixed(6)}</span>
-                                </div>
-                            </div>
-                        </Popup>
-                    </Marker>
-                ))}
-            </MapContainer>
+        <div style={{ width: '100%', height: '100%', position: 'relative', backgroundColor: '#111' }}>
+            {/* 컨테이너를 항상 렌더링하여 Ref가 유실되지 않도록 함 */}
+            <div ref={mapRef} style={{
+                width: '100%',
+                height: '100%',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                zIndex: 1
+            }} />
+
+            {/* 로딩 오버레이 */}
+            {isLoading && (
+                <div style={{
+                    position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+                    display: 'flex', justifyContent: 'center', alignItems: 'center',
+                    backgroundColor: '#1a1a1a', color: '#fff', zIndex: 1000
+                }}>
+                    지도 및 수목 데이터를 불러오는 중...
+                </div>
+            )}
 
             {/* 데이터 새로고침 버튼 */}
-            <button
-                onClick={fetchTrees}
-                style={{
-                    position: 'absolute', top: '20px', right: '20px', zIndex: 1000,
-                    padding: '8px 16px', backgroundColor: 'rgba(0,0,0,0.7)', color: 'white',
-                    border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', cursor: 'pointer',
-                    backdropFilter: 'blur(5px)', fontWeight: 'bold'
-                }}
-            >
-                데이터 새로고침
-            </button>
+            {!isLoading && (
+                <button
+                    onClick={() => {
+                        window.location.reload();
+                    }}
+                    style={{
+                        position: 'absolute', top: '20px', right: '20px', zIndex: 1000,
+                        padding: '8px 16px', backgroundColor: 'rgba(0,0,0,0.8)', color: 'white',
+                        border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', cursor: 'pointer',
+                        backdropFilter: 'blur(5px)', fontWeight: 'bold', boxShadow: '0 4px 6px rgba(0,0,0,0.3)'
+                    }}
+                >
+                    데이터 새로고침
+                </button>
+            )}
         </div>
     );
 };
