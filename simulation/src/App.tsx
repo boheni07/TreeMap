@@ -77,7 +77,8 @@ const TreeSurveySimulator = () => {
     }, []);
 
     useEffect(() => {
-        setIsVertical(Math.abs(angle - 90) < 2);
+        // 자석 효과: 1.5도 이내면 수직(isVertical)으로 판단
+        setIsVertical(Math.abs(angle - 90) < 1.5);
     }, [angle]);
 
     // 실시간 거리 계산
@@ -202,7 +203,7 @@ const TreeSurveySimulator = () => {
                                     : 'radial-gradient(circle at 35% 35%, #ffebee, #f44336 70%, #b71c1c)',
                                 borderRadius: '50%',
                                 transition: 'transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1)',
-                                transform: `translateY(${(angle - 90) * 4}px)`,
+                                transform: `translateY(${Math.abs(angle - 90) < 1.5 ? 0 : (angle - 90) * 4}px)`,
                                 boxShadow: `0 4px 12px rgba(0,0,0,0.5), inset -2px -2px 6px rgba(0,0,0,0.3), ${isVertical ? '0 0 20px rgba(76, 175, 80, 0.8)' : '0 0 20px rgba(244, 67, 54, 0.8)'}`,
                                 zIndex: 1,
                                 position: 'relative',
