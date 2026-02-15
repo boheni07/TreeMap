@@ -84,7 +84,7 @@ const TreeSurveySimulator = () => {
         const dbh = calculateDbh(dist, vw);
         const treeHeight = calculateTreeHeight(dist, syncedPose.p, userHeight);
 
-        setMeasurement({
+        const measurementData = {
             photo: photoData,
             timestamp: new Date().toLocaleString(),
             solarInfo: {
@@ -117,7 +117,28 @@ const TreeSurveySimulator = () => {
                 lensHeight: userHeight,
                 targetPointPixel: { x: Math.round(vw / 2), y: Math.round(vh * 0.5) }
             }
-        });
+        };
+
+        setMeasurement(measurementData);
+
+        // 서버로 데이터 전송 (FastAPI 서버 연동)
+        fetch('http://localhost:8000/api/measurements', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                dbh: measurementData.tree.dbh,
+                height: measurementData.tree.height,
+                species: measurementData.tree.species,
+                healthScore: 85.0, // 시뮬레이션 기본값
+                latitude: measurementData.gps.target.lat,
+                longitude: measurementData.gps.target.lon
+            })
+        })
+            .then(res => {
+                if (res.ok) console.log('Data synced to server');
+                else console.error('Server sync failed');
+            })
+            .catch(err => console.error('Network error during sync:', err));
     };
 
     return (

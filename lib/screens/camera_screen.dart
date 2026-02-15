@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/sensor_service.dart';
 import '../services/measurement_service.dart';
+import '../services/api_service.dart';
+import '../models/tree_data.dart';
 import 'dart:math' as math;
 
 class CameraScreen extends StatefulWidget {
@@ -13,9 +15,11 @@ class CameraScreen extends StatefulWidget {
 class _CameraScreenState extends State<CameraScreen> {
   final SensorService _sensorService = SensorService();
   final MeasurementService _measurementService = MeasurementService();
+  final ApiService _apiService = ApiService();
   
   double _currentAngle = 0.0;
   bool _isVertical = false;
+  bool _isSending = false;
   double _userHeight = 1.7; // 기본값 (미터)
 
   @override
@@ -100,13 +104,40 @@ class _CameraScreenState extends State<CameraScreen> {
                 // 캡처 버튼
                 Padding(
                   padding: const EdgeInsets.only(bottom: 40),
-                  child: FloatingActionButton.large(
-                    onPressed: _isVertical ? () {
-                      // 측정 로직 실행
-                    } : null,
-                    backgroundColor: _isVertical ? Colors.green : Colors.grey,
-                    child: const Icon(Icons.camera_alt),
-                  ),
+                  child: _isSending 
+                    ? const CircularProgressIndicator(color: Colors.green)
+                    : FloatingActionButton.large(
+                        onPressed: _isVertical ? () async {
+                          setState(() => _isSending = true);
+                          
+                          // 가상 데이터 생성 (실제로는 로직 결과 사용)
+                          final treeData = TreeData(
+                            dbh: 25.5, 
+                            height: 12.0, 
+                            species: "소나무 (Pinus densiflora)", 
+                            healthScore: 88.0, 
+                            measuredAt: DateTime.now()
+                          );
+                          
+                          final success = await _apiService.sendTreeData(
+                            treeData, 
+                            lat: 37.5665, // 가상 위치
+                            lon: 126.9780
+                          );
+
+                          if (mounted) {
+                            setState(() => _isSending = false);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(success ? '데이터가 서버로 전송되었습니다.' : '전송 실패. 서버 상태를 확인하세요.'),
+                                backgroundColor: success ? Colors.green : Colors.red,
+                              ),
+                            );
+                          }
+                        } : null,
+                        backgroundColor: _isVertical ? Colors.green : Colors.grey,
+                        child: const Icon(Icons.camera_alt),
+                      ),
                 ),
               ],
             ),
