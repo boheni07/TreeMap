@@ -1,0 +1,46 @@
+# MacOS
+.DS_Store
+
+# Node.js
+node_modules/
+dist/
+build/
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Flutter
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+/build/
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+ios/Flutter/App.framework
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+android/app/src/main/java/io/flutter/plugins/
+/android/local.properties
+/android/key.properties
+/android/.gradle
+/android/app/google-services.json
+/ios/Runner/GoogleService-Info.plist
+
+# Git local
+.git/
+!.gitkeep
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+.project
+.vscode/
