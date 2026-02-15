@@ -43,7 +43,8 @@ const TreeViewMap = () => {
     useEffect(() => {
         const fetchTrees = async () => {
             try {
-                const response = await fetch('http://localhost:8000/api/measurements');
+                const serverHost = window.location.hostname;
+                const response = await fetch(`http://${serverHost}:8000/api/measurements`);
                 if (response.ok) {
                     const data = await response.json();
                     const validTrees = data.filter((t: any) =>
@@ -105,7 +106,7 @@ const TreeViewMap = () => {
         }
     }, [isLoading]);
 
-    // 4. 데이터 변경 시 마커 업데이트 및 시점 이동
+    // 4. 데이터 변경 시 마커 업데이트 및 시점 이동 (최신 데이터 센터)
     useEffect(() => {
         if (!mapInstance.current || !markersLayer.current) return;
 
@@ -113,7 +114,12 @@ const TreeViewMap = () => {
         markersLayer.current.clearLayers();
 
         if (trees.length > 0) {
-            trees.forEach(tree => {
+            let latestMarker: L.Marker | null = null;
+
+            // 데이터 정렬 (ID 순으로 정렬하여 마지막이 가장 최근임이 확실하게 함)
+            const sortedTrees = [...trees].sort((a, b) => a.id - b.id);
+
+            sortedTrees.forEach((tree, index) => {
                 const popupContent = `
                     <div style="min-width: 150px;">
                         <h3 style="margin: 0 0 10px 0; borderBottom: 1px solid #ddd; padding-bottom: 5px;">${tree.species}</h3>
@@ -127,14 +133,26 @@ const TreeViewMap = () => {
                     </div>
                 `;
 
-                L.marker([tree.latitude, tree.longitude], { icon: DefaultIcon })
+                const marker = L.marker([tree.latitude, tree.longitude], { icon: DefaultIcon })
                     .bindPopup(popupContent)
                     .addTo(markersLayer.current!);
+
+                // 마지막 마커(가장 최근 등록) 저장
+                if (index === sortedTrees.length - 1) {
+                    latestMarker = marker;
+                }
             });
 
-            // 마지막 데이터 위치로 시점 이동
-            const lastTree = trees[trees.length - 1];
-            mapInstance.current.setView([lastTree.latitude, lastTree.longitude], mapInstance.current.getZoom());
+            // 마지막 데이터 위치로 시점 이동 및 팝업 열기
+            if (latestMarker) {
+                const lastTree = sortedTrees[sortedTrees.length - 1];
+                mapInstance.current.setView([lastTree.latitude, lastTree.longitude], 17); // 조금 더 줌인하여 강조
+
+                // 마운트 직후나 대량 데이터 처리 시 팝업 열기가 무시될 수 있으므로 약간의 지연 후 실행
+                setTimeout(() => {
+                    latestMarker?.openPopup();
+                }, 100);
+            }
         }
     }, [trees]);
 

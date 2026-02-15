@@ -121,8 +121,11 @@ const MobileSimulator = () => {
 
         setMeasurement(measurementData);
 
-        // 서버로 데이터 전송 (FastAPI 서버 연동)
-        fetch('http://localhost:8000/api/measurements', {
+        // 서버로 데이터 전송 (FastAPI 서버 연동 - 동적 호스트 설정)
+        const serverHost = window.location.hostname;
+        const apiUri = `http://${serverHost}:8000/api/measurements`;
+
+        fetch(apiUri, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -135,10 +138,18 @@ const MobileSimulator = () => {
             })
         })
             .then(res => {
-                if (res.ok) console.log('Data synced to server');
-                else console.error('Server sync failed');
+                if (res.ok) {
+                    console.log('Data synced to server');
+                    alert('✅ 분석 데이터가 서버로 전송되었습니다.');
+                } else {
+                    console.error('Server sync failed');
+                    alert('❌ 서버 전송 실패: 서버 상태를 확인해 주세요.');
+                }
             })
-            .catch(err => console.error('Network error during sync:', err));
+            .catch(err => {
+                console.error('Network error during sync:', err);
+                alert(`⚠️ 전송 오류: 네트워크 연결을 확인하세요.\n(서버 주소: ${apiUri})`);
+            });
     };
 
     return (

@@ -23,7 +23,8 @@ const MapDashboard = () => {
 
     const fetchTrees = async () => {
         try {
-            const response = await fetch('http://localhost:8000/api/measurements');
+            const serverHost = window.location.hostname;
+            const response = await fetch(`http://${serverHost}:8000/api/measurements`);
             if (response.ok) {
                 const data = await response.json();
                 setTrees(data);
