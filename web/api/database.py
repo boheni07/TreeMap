@@ -8,7 +8,14 @@ logger = logging.getLogger(__name__)
 
 # 현재 파일의 위치를 기준으로 데이터베이스 경로 설정
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-SQLALCHEMY_DATABASE_URL = f"sqlite:///{os.path.join(BASE_DIR, 'tree_map.db')}"
+
+# Vercel Serverless 환경 대응 (읽기 전용 파일 시스템 방어)
+if os.environ.get('VERCEL'):
+    # Vercel에서는 /tmp 디렉토리만 쓰기 권한이 있음
+    SQLALCHEMY_DATABASE_URL = "sqlite:////tmp/tree_map.db"
+    logger.info("Running in Vercel environment. Using /tmp/tree_map.db")
+else:
+    SQLALCHEMY_DATABASE_URL = f"sqlite:///{os.path.join(BASE_DIR, 'tree_map.db')}"
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,

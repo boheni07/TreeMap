@@ -15,11 +15,15 @@ logger = logging.getLogger(__name__)
 
 # 데이터베이스 테이블 생성
 try:
+    # Vercel 환경에서는 배포 시점에 테이블이 이미 생성되어 있거나, 
+    # 런타임에 /tmp에 생성되어야 함
     models.Base.metadata.create_all(bind=engine)
-    logger.info("Database tables created successfully")
+    logger.info("Database tables initialized successfully")
 except Exception as e:
-    logger.error(f"Failed to create database tables: {e}")
-    raise
+    # Vercel 환경에서는 로그만 남기고 우선 앱 실행을 시도 (복구 가능성 고려)
+    logger.error(f"Database initialization warning/error: {e}")
+    if not os.environ.get('VERCEL'):
+        raise
 
 app = FastAPI(
     title="TreeMap Backend API",
