@@ -113,29 +113,72 @@ class _CameraScreenState extends State<CameraScreen> {
                         onPressed: _isVertical ? () async {
                           setState(() => _isSending = true);
                           
-                          // 가상 데이터 생성 (실제로는 로직 결과 사용)
-                          final treeData = TreeData(
-                            dbh: 25.5, 
-                            height: 12.0, 
-                            species: "소나무 (Pinus densiflora)", 
-                            healthScore: 88.0, 
-                            measuredAt: DateTime.now()
-                          );
-                          
-                          final success = await _apiService.sendTreeData(
-                            treeData, 
-                            lat: 37.5665, // 가상 위치
-                            lon: 126.9780
-                          );
-
-                          if (mounted) {
-                            setState(() => _isSending = false);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(success ? '데이터가 서버로 전송되었습니다.' : '전송 실패. 서버 상태를 확인하세요.'),
-                                backgroundColor: success ? Colors.green : Colors.red,
-                              ),
+                          try {
+                            // 센서 데이터 수집
+                            print('센서 데이터 수집 중...');
+                            final sensorData = await _sensorService.collectSensorData();
+                            print('센서 데이터 수집 완료');
+                            
+                            // 가상 데이터 생성 (실제로는 측정 로직 결과 사용)
+                            final treeData = TreeData(
+                              dbh: 25.5, 
+                              height: 12.0, 
+                              species: "소나무 (Pinus densiflora)", 
+                              healthScore: 88.0, 
+                              measuredAt: DateTime.now(),
+                              // IMU 데이터
+                              accelerometerX: sensorData.accelerometerX,
+                              accelerometerY: sensorData.accelerometerY,
+                              accelerometerZ: sensorData.accelerometerZ,
+                              gyroscopeX: sensorData.gyroscopeX,
+                              gyroscopeY: sensorData.gyroscopeY,
+                              gyroscopeZ: sensorData.gyroscopeZ,
+                              magnetometerX: sensorData.magnetometerX,
+                              magnetometerY: sensorData.magnetometerY,
+                              magnetometerZ: sensorData.magnetometerZ,
+                              devicePitch: sensorData.devicePitch,
+                              deviceRoll: sensorData.deviceRoll,
+                              deviceAzimuth: sensorData.deviceAzimuth,
+                              // 환경 센서 데이터
+                              ambientLight: sensorData.ambientLight,
+                              pressure: sensorData.pressure,
+                              altitude: sensorData.altitude,
+                              temperature: sensorData.temperature,
+                              // 시스템 정보
+                              deviceModel: sensorData.deviceModel,
+                              osVersion: sensorData.osVersion,
+                              appVersion: sensorData.appVersion,
                             );
+                            
+                            print('서버로 데이터 전송 중...');
+                            final success = await _apiService.sendTreeData(
+                              treeData,
+                              deviceLat: 37.5665, // 기기 위치 (실제로는 스마트폰 GPS 사용)
+                              deviceLon: 126.9780,
+                              treeLat: 37.5668, // 나무 위치 (계산된 피사체 위치)
+                              treeLon: 126.9783,
+                            );
+
+                            if (mounted) {
+                              setState(() => _isSending = false);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(success ? '데이터가 서버로 전송되었습니다.' : '전송 실패. 서버 상태를 확인하세요.'),
+                                  backgroundColor: success ? Colors.green : Colors.red,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            print('오류 발생: $e');
+                            if (mounted) {
+                              setState(() => _isSending = false);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('오류 발생: $e'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
                           }
                         } : null,
                         backgroundColor: _isVertical ? Colors.green : Colors.grey,

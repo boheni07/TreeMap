@@ -25,10 +25,46 @@ interface TreeData {
     dbh: number;
     height: number;
     species: string;
-    health_score: number;
-    latitude: number;
-    longitude: number;
+    healthScore: number;
+
+    // 위치 정보
+    deviceLatitude?: number;  // 기기 위치 (스마트폰 GPS)
+    deviceLongitude?: number;
+    treeLatitude?: number;  // 나무 위치 (계산된 피사체 위치)
+    treeLongitude?: number;
+
     measured_at: string;
+
+    // IMU 데이터
+    accelerometerX?: number;
+    accelerometerY?: number;
+    accelerometerZ?: number;
+    gyroscopeX?: number;
+    gyroscopeY?: number;
+    gyroscopeZ?: number;
+    magnetometerX?: number;
+    magnetometerY?: number;
+    magnetometerZ?: number;
+    devicePitch?: number;
+    deviceRoll?: number;
+    deviceAzimuth?: number;
+
+    // 환경 센서 데이터
+    ambientLight?: number;
+    pressure?: number;
+    altitude?: number;
+    temperature?: number;
+
+    // 카메라 메타데이터
+    imageWidth?: number;
+    imageHeight?: number;
+    focalLength?: number;
+    cameraDistance?: number;
+
+    // 시스템 정보
+    deviceModel?: string;
+    osVersion?: string;
+    appVersion?: string;
 }
 
 const TreeViewMap = () => {
@@ -47,8 +83,8 @@ const TreeViewMap = () => {
                 if (response.ok) {
                     const data = await response.json();
                     const validTrees = data.filter((t: any) =>
-                        t.latitude !== null && t.longitude !== null &&
-                        t.latitude !== 0 && t.longitude !== 0
+                        (t.treeLatitude != null || t.deviceLatitude != null) &&
+                        (t.treeLatitude !== 0 || t.deviceLatitude !== 0)
                     );
                     setTrees(validTrees);
                 }
@@ -118,39 +154,104 @@ const TreeViewMap = () => {
             // 데이터 정렬 (ID 순으로 정렬하여 마지막이 가장 최근임이 확실하게 함)
             const sortedTrees = [...trees].sort((a, b) => a.id - b.id);
 
+
             sortedTrees.forEach((tree, index) => {
+                // 센서 데이터 유무 확인 (null과 undefined 모두 체크)
+                const hasSensorData = tree.devicePitch != null || tree.ambientLight != null;
+
                 const popupContent = `
-                    <div style="min-width: 150px;">
-                        <h3 style="margin: 0 0 10px 0; borderBottom: 1px solid #ddd; padding-bottom: 5px;">${tree.species}</h3>
-                        <div style="font-size: 13px; line-height: 1.6;">
-                            <strong>ID:</strong> ${tree.id}<br />
-                            <strong>흉고직경 (DBH):</strong> ${tree.dbh} cm<br />
-                            <strong>수고:</strong> ${tree.height} m<br />
-                            <strong>측정일:</strong> ${new Date(tree.measured_at).toLocaleDateString()}<br />
-                            <span style="font-size: 11px; color: #666;">Lat: ${tree.latitude.toFixed(6)}</span>
+                    <div style="min-width: 250px; max-width: 350px;">
+                        <h3 style="margin: 0 0 10px 0; border-bottom: 2px solid #4CAF50; padding-bottom: 5px; color: #2c3e50;">${tree.species}</h3>
+                        
+                        <div style="font-size: 13px; line-height: 1.8;">
+                            <div style="background: #f8f9fa; padding: 8px; border-radius: 4px; margin-bottom: 8px;">
+                                <strong>📏 기본 측정 데이터</strong><br/>
+                                <strong>ID:</strong> ${tree.id}<br/>
+                                <strong>흉고직경 (DBH):</strong> ${tree.dbh} cm<br/>
+                                <strong>수고:</strong> ${tree.height} m<br/>
+                                <strong>건강도:</strong> ${tree.healthScore}%<br/>
+                                <strong>측정일:</strong> ${new Date(tree.measured_at).toLocaleDateString()}<br/>
+                            </div>
+                            
+                            ${hasSensorData ? `
+                                <div style="background: #e3f2fd; padding: 8px; border-radius: 4px; margin-bottom: 8px;">
+                                    <strong>📱 센서 데이터</strong><br/>
+                                    ${tree.devicePitch != null ? `<strong>기기 피치:</strong> ${tree.devicePitch.toFixed(1)}°<br/>` : ''}
+                                    ${tree.deviceRoll != null ? `<strong>기기 롤:</strong> ${tree.deviceRoll.toFixed(1)}°<br/>` : ''}
+                                    ${tree.deviceAzimuth != null ? `<strong>방위각:</strong> ${tree.deviceAzimuth.toFixed(1)}°<br/>` : ''}
+                                    ${tree.ambientLight != null ? `<strong>조도:</strong> ${tree.ambientLight.toFixed(0)} lux<br/>` : ''}
+                                    ${tree.pressure != null ? `<strong>기압:</strong> ${tree.pressure.toFixed(1)} hPa<br/>` : ''}
+                                    ${tree.altitude != null ? `<strong>고도:</strong> ${tree.altitude.toFixed(1)} m<br/>` : ''}
+                                    ${tree.temperature != null ? `<strong>온도:</strong> ${tree.temperature.toFixed(1)}°C<br/>` : ''}
+                                </div>
+
+                                ${tree.accelerometerX != null || tree.gyroscopeX != null || tree.magnetometerX != null ? `
+                                    <div style="background: #f1f8e9; padding: 8px; border-radius: 4px; margin-bottom: 8px;">
+                                        <strong>📊 IMU 원시 데이터</strong><br/>
+                                        ${tree.accelerometerX != null ? `<div style="font-size: 11px; margin-top: 4px; color: #33691e;"><strong>가속도:</strong> ${tree.accelerometerX.toFixed(2)}, ${tree.accelerometerY?.toFixed(2)}, ${tree.accelerometerZ?.toFixed(2)}</div>` : ''}
+                                        ${tree.gyroscopeX != null ? `<div style="font-size: 11px; margin-top: 2px; color: #1a237e;"><strong>자이로:</strong> ${tree.gyroscopeX.toFixed(3)}, ${tree.gyroscopeY?.toFixed(3)}, ${tree.gyroscopeZ?.toFixed(3)}</div>` : ''}
+                                        ${tree.magnetometerX != null ? `<div style="font-size: 11px; margin-top: 2px; color: #b71c1c;"><strong>자기계:</strong> ${tree.magnetometerX.toFixed(1)}, ${tree.magnetometerY?.toFixed(1)}, ${tree.magnetometerZ?.toFixed(1)}</div>` : ''}
+                                    </div>
+                                ` : ''}
+                                
+                                ${tree.imageWidth != null ? `
+                                    <div style="background: #fff3e0; padding: 8px; border-radius: 4px; margin-bottom: 8px;">
+                                        <strong>📷 카메라 정보</strong><br/>
+                                        <strong>해상도:</strong> ${tree.imageWidth} × ${tree.imageHeight}<br/>
+                                        ${tree.focalLength != null ? `<strong>초점 거리:</strong> ${tree.focalLength} mm<br/>` : ''}
+                                        ${tree.cameraDistance != null ? `<strong>촬영 거리:</strong> ${tree.cameraDistance} m<br/>` : ''}
+                                    </div>
+                                ` : ''}
+                                
+                                ${tree.deviceModel != null ? `
+                                    <div style="background: #f3e5f5; padding: 8px; border-radius: 4px;">
+                                        <strong>💻 시스템 정보</strong><br/>
+                                        <strong>기기:</strong> ${tree.deviceModel}<br/>
+                                        ${tree.osVersion != null ? `<strong>OS:</strong> ${tree.osVersion}<br/>` : ''}
+                                        ${tree.appVersion != null ? `<strong>앱 버전:</strong> ${tree.appVersion}<br/>` : ''}
+                                    </div>
+                                ` : ''}
+                            ` : ''}
+                            
+                            <div style="margin-top: 8px; font-size: 11px; color: #666;">
+                                ${tree.treeLatitude != null && tree.treeLongitude != null ? `<div>🌳 <strong>나무 위치:</strong> ${tree.treeLatitude.toFixed(6)}, ${tree.treeLongitude.toFixed(6)}</div>` : ''}
+                                ${tree.deviceLatitude != null && tree.deviceLongitude != null ? `<div>📱 <strong>기기 위치:</strong> ${tree.deviceLatitude.toFixed(6)}, ${tree.deviceLongitude.toFixed(6)}</div>` : ''}
+                            </div>
                         </div>
                     </div>
                 `;
 
-                const marker = L.marker([tree.latitude, tree.longitude], { icon: DefaultIcon })
-                    .bindPopup(popupContent)
-                    .addTo(markersLayer.current!);
+                // 마커는 나무 위치에 표시 (나무 위치가 없으면 기기 위치 사용)
+                const markerLat = tree.treeLatitude ?? tree.deviceLatitude ?? 0;
+                const markerLon = tree.treeLongitude ?? tree.deviceLongitude ?? 0;
 
-                // 마지막 마커(가장 최근 등록) 저장
-                if (index === sortedTrees.length - 1) {
-                    latestMarker = marker;
+                if (markerLat !== 0 && markerLon !== 0) {
+                    const marker = L.marker([markerLat, markerLon], { icon: DefaultIcon })
+                        .bindPopup(popupContent, { maxWidth: 400 })
+                        .addTo(markersLayer.current!);
+
+                    // 마지막 마커(가장 최근 등록) 저장
+                    if (index === sortedTrees.length - 1) {
+                        latestMarker = marker;
+                    }
                 }
             });
+
 
             // 마지막 데이터 위치로 시점 이동 및 팝업 열기
             if (latestMarker) {
                 const lastTree = sortedTrees[sortedTrees.length - 1];
-                mapInstance.current.setView([lastTree.latitude, lastTree.longitude], 17); // 조금 더 줌인하여 강조
+                const viewLat = lastTree.treeLatitude ?? lastTree.deviceLatitude ?? 0;
+                const viewLon = lastTree.treeLongitude ?? lastTree.deviceLongitude ?? 0;
 
-                // 마운트 직후나 대량 데이터 처리 시 팝업 열기가 무시될 수 있으므로 약간의 지연 후 실행
-                setTimeout(() => {
-                    latestMarker?.openPopup();
-                }, 100);
+                if (viewLat !== 0 && viewLon !== 0) {
+                    mapInstance.current.setView([viewLat, viewLon], 17); // 조금 더 줌인하여 강조
+
+                    // 마운트 직후나 대량 데이터 처리 시 팝업 열기가 무시될 수 있으므로 약간의 지연 후 실행
+                    setTimeout(() => {
+                        latestMarker?.openPopup();
+                    }, 100);
+                }
             }
         }
     }, [trees]);
