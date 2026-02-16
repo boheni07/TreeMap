@@ -1,21 +1,24 @@
 import 'dart:math' as math;
 
 class MeasurementService {
-  /// 거리 계산 (d)
-  /// d = H * tan(90° - alpha)
+  /// 거리 계산 (d) 
   /// [lensHeight]: 지면으로부터 카메라 렌즈까지의 높이 (m)
-  /// [alpha]: 가속도/자이로 센서로 측정된 지면 방향과의 각도 (radians)
-  double calculateDistance(double lensHeight, double alpha) {
-    // 90도 - alpha (alpha가 지면과의 각도일 때)
-    double theta = (math.pi / 2) - alpha;
-    return lensHeight * math.tan(theta);
+  /// [angleInDegrees]: 기기의 기울기 (Pitch, degrees. 수평이 0도, 아래가 +, 위가 -)
+  double calculateDistance(double lensHeight, double angleInDegrees) {
+    // 각도를 라디안으로 변환
+    double alpha = angleInDegrees * math.pi / 180;
+    
+    // d = H * tan(90° - alpha) -> alpha가 수평 기준이면 d = H / tan(alpha)
+    // 여기서는 alpha가 수평(0)에서 아래(+90)일 때: d = H * tan(90 - alpha)
+    // 더 안정적인 계산: d = H * tan((90 - angleInDegrees) * pi / 180)
+    return lensHeight * math.tan((90 - angleInDegrees) * math.pi / 180);
   }
 
   /// 흉고직경 (DBH) 계산
   /// [pixelWidth]: 1.2m 지점에서의 트렁크 마스크 픽셀 너비
-  /// [distance]: 위에서 계산된 수목과의 거리 (m)
-  /// [imageWidth]: 원본 이미지의 픽셀 너비
-  /// [hfov]: 카메라의 수평 화각 (Horizontal Field of View, degrees)
+  /// [distance]: 수목과의 거리 (m)
+  /// [imageWidth]: 원본 이미지의 픽셀 너비 (예: 1080)
+  /// [hfov]: 카메라의 수평 화각 (Horizontal Field of View, degrees. 보통 60~70)
   double calculateDBH(double pixelWidth, double distance, double imageWidth, double hfov) {
     // 1픽셀당 차지하는 각도
     double anglePerPixel = hfov / imageWidth;
@@ -32,12 +35,13 @@ class MeasurementService {
 
   /// 수고 (Tree Height) 계산
   /// [distance]: 수목과의 거리 (m)
-  /// [bottomAngle]: 나무 밑동을 향한 카메라 각도 (radians)
-  /// [topAngle]: 나무 꼭대기를 향한 카메라 각도 (radians)
-  /// [lensHeight]: 렌즈 높이 (m)
-  double calculateTreeHeight(double distance, double bottomAngle, double topAngle, double lensHeight) {
-    // 삼각측량: h = d * (tan(topAngle) + tan(bottomAngle))
-    // 각도가 수평(0도) 기준일 때
-    return distance * (math.tan(topAngle) + math.tan(bottomAngle));
+  /// [bottomAngleDeg]: 나무 밑동 각도 (degrees)
+  /// [topAngleDeg]: 나무 꼭대기 각도 (degrees)
+  double calculateTreeHeight(double distance, double bottomAngleDeg, double topAngleDeg) {
+    double bRad = bottomAngleDeg * math.pi / 180;
+    double tRad = topAngleDeg * math.pi / 180;
+    
+    // h = d * (tan(top) + tan(bottom))
+    return distance * (math.tan(tRad) + math.tan(bRad));
   }
 }

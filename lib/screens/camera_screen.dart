@@ -92,9 +92,12 @@ class _CameraScreenState extends State<CameraScreen> {
                         style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.settings, color: Colors.white),
+                        icon: const Icon(Icons.settings, color: Colors.white, size: 28),
                         onPressed: () {
-                          // 사용자 키 설정 팝업 등
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                          );
                         },
                       ),
                     ],

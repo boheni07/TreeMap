@@ -135,6 +135,7 @@ const MobileSimulator = () => {
 
         // 서버로 데이터 전송 (FastAPI 서버 연동 - 동적/설정 호스트)
         const apiUri = `http://${serverIp}:8000/api/measurements`;
+        const isHttps = window.location.protocol === 'https:';
 
         fetch(apiUri, {
             method: 'POST',
@@ -154,12 +155,21 @@ const MobileSimulator = () => {
                     alert('✅ 분석 데이터가 서버로 전송되었습니다.');
                 } else {
                     console.error('Server sync failed');
-                    alert(`❌ 서버 전송 실패: 서버 상태를 확인해 주세요.\n(응답 코드: ${res.status})`);
+                    alert(`❌ 서버 전송 실패 (코드: ${res.status})\n\n시도한 주소: ${apiUri}\n\n도움말:\n1. 서버 PC의 방화벽에서 8000번 포트가 열려있는지 확인하세요.\n2. 서버 프로그램(FastAPI)이 실행 중인지 확인하세요.`);
                 }
             })
             .catch(err => {
                 console.error('Network error during sync:', err);
-                alert(`⚠️ 전송 오류: 네트워크 연결을 확인하세요.\n서버 주소: ${apiUri}\n\n도움말: PC와 스마트폰이 같은 Wi-Fi에 연결되어 있는지 확인하고, 필요시 '설정(톱니바퀴)'에서 PC의 IP 주소를 직접 입력하세요.`);
+
+                let helpMsg = `⚠️ 전송 오류: 연결할 수 없습니다.\n시도 주소: ${apiUri}\n\n`;
+
+                if (isHttps) {
+                    helpMsg += `🚨 [중요: 보안 정책 차단]\n현재 사이트가 HTTPS인데 서버 IP는 HTTP(보안 안됨)입니다. 크롬 설정에서 '안전하지 않은 콘텐츠' 허용이 필요합니다.\n또는 PC의 IP가 정확한지 다시 확인하세요. (현재 PC IP: 172.30.1.90)\n\n`;
+                }
+
+                helpMsg += `체크리스트:\n1. PC와 폰이 같은 Wi-Fi인가요?\n2. PC 방화벽에서 8000번 포트를 허용했나요?\n3. 좌측 상단 '서버 접속 설정'에서 IP가 172.30.1.90 인지 확인하세요.`;
+
+                alert(helpMsg);
             });
     };
 
@@ -220,37 +230,37 @@ const MobileSimulator = () => {
                     </div>
                 </div>
 
-                {/* 상단바 */}
-                <div style={{ position: 'absolute', top: 0, width: '100%', padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', background: 'linear-gradient(to bottom, rgba(0,0,0,0.8), transparent)', pointerEvents: 'none', zIndex: 1001 }}>
-                    <span style={{ fontWeight: 'bold', fontSize: '18px', color: 'rgba(255,255,255,0.7)' }}>TreeMap Mobile</span>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-                        <div style={{
-                            padding: '10px 16px', backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)',
-                            borderRadius: '14px', border: '1px solid rgba(255,255,255,0.2)', fontFamily: 'monospace', fontSize: '12px', textAlign: 'right', color: '#fff', boxShadow: '0 4px 15px rgba(0,0,0,0.5)'
-                        }}>
-                            Server IP: <span style={{ color: '#10b981', fontWeight: 'bold' }}>{serverIp}</span><br />
-                            Lat: {currentGps.lat.toFixed(6)}<br />
-                            Lon: {currentGps.lon.toFixed(6)}
-                        </div>
-                    </div>
-                </div>
-
-                {/* 설정 플로팅 버튼 - 클릭 보장 및 시인성 확보 */}
+                {/* 설정 버튼 - 좌측 상단으로 이동 및 텍스트 추가 (시인성 극대화) */}
                 <button
                     onClick={() => setShowSettings(true)}
                     style={{
-                        position: 'absolute', top: '20px', right: '20px', zIndex: 2000,
-                        width: '44px', height: '44px', borderRadius: '12px',
-                        backgroundColor: 'rgba(0,0,0,0.6)', color: 'white',
-                        border: '1px solid rgba(255,255,255,0.3)',
-                        display: 'flex', justifyContent: 'center', alignItems: 'center',
+                        position: 'absolute', top: '20px', left: '20px', zIndex: 2005,
+                        padding: '8px 16px', borderRadius: '12px',
+                        backgroundColor: '#ef4444', color: 'white', // 빨간색으로 변경하여 눈에 더 띄게 함
+                        border: '2px solid white',
+                        display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px',
                         cursor: 'pointer', backdropFilter: 'blur(10px)',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                        pointerEvents: 'auto'
+                        boxShadow: '0 4px 15px rgba(239, 68, 68, 0.5)',
+                        pointerEvents: 'auto',
+                        fontWeight: 'bold'
                     }}
                 >
-                    <Settings size={24} />
+                    <Settings size={20} />
+                    <span>서버 접속 설정</span>
                 </button>
+
+                {/* 상단바 - 정보 표시 영역 */}
+                <div style={{ position: 'absolute', top: 0, width: '100%', padding: '20px 20px 20px 160px', display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-start', background: 'linear-gradient(to bottom, rgba(0,0,0,0.8), transparent)', pointerEvents: 'none', zIndex: 1001 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                        <div style={{
+                            padding: '10px 16px', backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)',
+                            borderRadius: '14px', border: '1px solid rgba(255,255,255,0.2)', fontFamily: 'monospace', fontSize: '11px', textAlign: 'right', color: '#fff', boxShadow: '0 4px 15px rgba(0,0,0,0.5)'
+                        }}>
+                            Server IP: <span style={{ color: '#10b981', fontWeight: 'bold' }}>{serverIp}</span><br />
+                            GPS: {currentGps.lat.toFixed(4)}, {currentGps.lon.toFixed(4)}
+                        </div>
+                    </div>
+                </div>
 
                 <canvas ref={canvasRef} style={{ display: 'none' }} />
             </div>

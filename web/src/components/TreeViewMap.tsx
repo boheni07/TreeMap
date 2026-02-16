@@ -43,8 +43,7 @@ const TreeViewMap = () => {
     useEffect(() => {
         const fetchTrees = async () => {
             try {
-                const serverHost = window.location.hostname;
-                const response = await fetch(`http://${serverHost}:8000/api/measurements`);
+                const response = await fetch(`/api/measurements`);
                 if (response.ok) {
                     const data = await response.json();
                     const validTrees = data.filter((t: any) =>
