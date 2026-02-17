@@ -162,94 +162,104 @@ const TreeViewMap = () => {
                 const hasSensorData = tree.devicePitch != null || tree.ambientLight != null;
 
                 const popupContent = `
-                    <div style="min-width: 250px; max-width: 350px;">
-                        ${tree.image_data ? `<img src="${tree.image_data}" style="width: 100%; border-radius: 8px; margin-bottom: 12px; border: 1px solid #ddd; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" />` : ''}
-                        <h3 style="margin: 0 0 10px 0; border-bottom: 2px solid #4CAF50; padding-bottom: 5px; color: #2c3e50;">${tree.species}</h3>
+                    <div style="min-width: 280px; max-width: 400px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                        ${tree.image_data ? `
+                        <div style="position: relative; margin-bottom: 12px;">
+                            <img src="${tree.image_data}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 12px; border: 1px solid #ddd; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+                            <div style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.6); color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px;">ID: ${tree.id}</div>
+                        </div>
+                        ` : ''}
                         
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px solid #eee;">
-                            <div style="text-align: center;">
-                                <div style="font-size: 10px; color: #666; font-weight: bold;">수고 (H)</div>
-                                <div style="font-size: 16px; color: #2e7d32; font-weight: 800;">${tree.height}m</div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 2px solid #4CAF50; padding-bottom: 5px;">
+                            <h3 style="margin: 0; color: #2c3e50; font-size: 1.2em;">${tree.species}</h3>
+                            <span style="font-size: 11px; color: #666;">${new Date(tree.measured_at).toLocaleString('ko-KR')}</span>
+                        </div>
+                        
+                        <!-- 주요 측정 수치 (Grid) -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 15px; background: #f0f4f7; padding: 12px; border-radius: 10px; border: 1px solid #e0e6ed;">
+                            <div style="text-align: center; border-right: 1px solid #d1d9e6;">
+                                <div style="font-size: 9px; color: #78909c; font-weight: bold; text-transform: uppercase;">Chest DBH</div>
+                                <div style="font-size: 18px; color: #d32f2f; font-weight: 900;">${tree.dbh}<small style="font-size: 10px; font-weight: 400; margin-left:1px;">cm</small></div>
                             </div>
                             <div style="text-align: center;">
-                                <div style="font-size: 10px; color: #666; font-weight: bold;">수관폭 (W)</div>
-                                <div style="font-size: 16px; color: #2e7d32; font-weight: 800;">${tree.crown_width || '-'}m</div>
+                                <div style="font-size: 9px; color: #78909c; font-weight: bold; text-transform: uppercase;">Total Height</div>
+                                <div style="font-size: 18px; color: #2e7d32; font-weight: 900;">${tree.height}<small style="font-size: 10px; font-weight: 400; margin-left:1px;">m</small></div>
                             </div>
-                            <div style="text-align: center;">
-                                <div style="font-size: 10px; color: #666; font-weight: bold;">지하고 (C)</div>
-                                <div style="font-size: 16px; color: #1976d2; font-weight: 800;">${tree.ground_clearance || '-'}m</div>
+                            <div style="text-align: center; border-right: 1px solid #d1d9e6; margin-top: 8px; pt: 8px; border-top: 1px solid #d1d9e6;">
+                                <div style="font-size: 9px; color: #78909c; font-weight: bold; text-transform: uppercase;">Crown Width</div>
+                                <div style="font-size: 16px; color: #1b5e20; font-weight: 800;">${tree.crown_width || '-'}<small style="font-size: 10px; font-weight: 400;">m</small></div>
                             </div>
-                            <div style="text-align: center;">
-                                <div style="font-size: 10px; color: #666; font-weight: bold;">흉고직경 (D)</div>
-                                <div style="font-size: 16px; color: #d32f2f; font-weight: 800;">${tree.dbh}cm</div>
+                            <div style="text-align: center; margin-top: 8px; pt: 8px; border-top: 1px solid #d1d9e6;">
+                                <div style="font-size: 9px; color: #78909c; font-weight: bold; text-transform: uppercase;">Ground Clr.</div>
+                                <div style="font-size: 16px; color: #0277bd; font-weight: 800;">${tree.ground_clearance || '-'}<small style="font-size: 10px; font-weight: 400;">m</small></div>
                             </div>
                         </div>
 
-                        <div style="font-size: 13px; line-height: 1.8;">
-                            <div style="background: #f8f9fa; padding: 8px; border-radius: 4px; margin-bottom: 8px;">
-                                <strong>📏 기본 측정 데이터</strong><br/>
-                                <strong>ID:</strong> ${tree.id}<br/>
-                                <strong>흉고직경 (DBH):</strong> ${tree.dbh} cm<br/>
-                                <strong>수고:</strong> ${tree.height} m<br/>
-                                <strong>건강도:</strong> ${tree.healthScore}%<br/>
-                                <strong>측정일:</strong> ${new Date(tree.measured_at).toLocaleDateString()}<br/>
+                        <div style="max-height: 250px; overflow-y: auto; padding-right: 5px; font-size: 12px; line-height: 1.6;">
+                            <!-- 건강도 및 기본 정보 -->
+                            <div style="background: #ffffff; padding: 10px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #4CAF50; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                                <strong>🌿 생육 상태 및 정보</strong><br/>
+                                <div style="display: flex; justify-content: space-between; margin-top: 4px;">
+                                    <span>활력도(Health):</span>
+                                    <span style="font-weight: bold; color: ${tree.healthScore > 70 ? '#2e7d32' : '#f57c00'}">${tree.healthScore}%</span>
+                                </div>
                             </div>
                             
-                            ${hasSensorData ? `
-                                <div style="background: #e3f2fd; padding: 8px; border-radius: 4px; margin-bottom: 8px;">
-                                    <strong>📱 센서 데이터</strong><br/>
-                                    ${tree.devicePitch != null ? `<strong>기기 피치:</strong> ${tree.devicePitch.toFixed(1)}°<br/>` : ''}
-                                    ${tree.deviceRoll != null ? `<strong>기기 롤:</strong> ${tree.deviceRoll.toFixed(1)}°<br/>` : ''}
-                                    ${tree.deviceAzimuth != null ? `<strong>방위각:</strong> ${tree.deviceAzimuth.toFixed(1)}°<br/>` : ''}
-                                    ${tree.ambientLight != null ? `<strong>조도:</strong> ${tree.ambientLight.toFixed(0)} lux<br/>` : ''}
-                                    ${tree.pressure != null ? `<strong>기압:</strong> ${tree.pressure.toFixed(1)} hPa<br/>` : ''}
-                                    ${tree.altitude != null ? `<strong>고도:</strong> ${tree.altitude.toFixed(1)} m<br/>` : ''}
-                                    ${tree.temperature != null ? `<strong>온도:</strong> ${tree.temperature.toFixed(1)}°C<br/>` : ''}
+                            <!-- 센서 및 환경 -->
+                            <div style="background: #e3f2fd; padding: 10px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #2196F3;">
+                                <strong>📱 기기 센서 및 환경</strong><br/>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 5px; font-size: 11px;">
+                                    ${tree.devicePitch != null ? `<div>Pitch: ${tree.devicePitch.toFixed(1)}°</div>` : ''}
+                                    ${tree.deviceRoll != null ? `<div>Roll: ${tree.deviceRoll.toFixed(1)}°</div>` : ''}
+                                    ${tree.deviceAzimuth != null ? `<div>Azimuth: ${tree.deviceAzimuth.toFixed(1)}°</div>` : ''}
+                                    ${tree.ambientLight != null ? `<div>Light: ${tree.ambientLight.toFixed(0)} lx</div>` : ''}
+                                    ${tree.pressure != null ? `<div>Pressure: ${tree.pressure.toFixed(1)} hPa</div>` : ''}
+                                    ${tree.temperature != null ? `<div>Temp: ${tree.temperature.toFixed(1)}°C</div>` : ''}
+                                    ${tree.altitude != null ? `<div>Altitude: ${tree.altitude.toFixed(1)} m</div>` : ''}
                                 </div>
+                            </div>
 
-                                ${tree.accelerometerX != null || tree.gyroscopeX != null || tree.magnetometerX != null ? `
-                                    <div style="background: #f1f8e9; padding: 8px; border-radius: 4px; margin-bottom: 8px;">
-                                        <strong>📊 IMU 원시 데이터</strong><br/>
-                                        ${tree.accelerometerX != null ? `<div style="font-size: 11px; margin-top: 4px; color: #33691e;"><strong>가속도:</strong> ${tree.accelerometerX.toFixed(2)}, ${tree.accelerometerY?.toFixed(2)}, ${tree.accelerometerZ?.toFixed(2)}</div>` : ''}
-                                        ${tree.gyroscopeX != null ? `<div style="font-size: 11px; margin-top: 2px; color: #1a237e;"><strong>자이로:</strong> ${tree.gyroscopeX.toFixed(3)}, ${tree.gyroscopeY?.toFixed(3)}, ${tree.gyroscopeZ?.toFixed(3)}</div>` : ''}
-                                        ${tree.magnetometerX != null ? `<div style="font-size: 11px; margin-top: 2px; color: #b71c1c;"><strong>자기계:</strong> ${tree.magnetometerX.toFixed(1)}, ${tree.magnetometerY?.toFixed(1)}, ${tree.magnetometerZ?.toFixed(1)}</div>` : ''}
-                                    </div>
-                                ` : ''}
-                                
-                                ${tree.imageWidth != null ? `
-                                    <div style="background: #fff3e0; padding: 8px; border-radius: 4px; margin-bottom: 8px;">
-                                        <strong>📷 카메라 정보</strong><br/>
-                                        <strong>해상도:</strong> ${tree.imageWidth} × ${tree.imageHeight}<br/>
-                                        ${tree.focalLength != null ? `<strong>초점 거리:</strong> ${tree.focalLength} mm<br/>` : ''}
-                                        ${tree.cameraDistance != null ? `<strong>촬영 거리:</strong> ${tree.cameraDistance} m<br/>` : ''}
-                                    </div>
-                                ` : ''}
-                                
-                                ${tree.deviceModel != null ? `
-                                    <div style="background: #f3e5f5; padding: 8px; border-radius: 4px;">
-                                        <strong>💻 시스템 정보</strong><br/>
-                                        <strong>기기:</strong> ${tree.deviceModel}<br/>
-                                        ${tree.osVersion != null ? `<strong>OS:</strong> ${tree.osVersion}<br/>` : ''}
-                                        ${tree.appVersion != null ? `<strong>앱 버전:</strong> ${tree.appVersion}<br/>` : ''}
-                                    </div>
-                                ` : ''}
+                            <!-- IMU 원시 데이터 -->
+                            ${tree.accelerometerX != null || tree.gyroscopeX != null ? `
+                            <div style="background: #f1f8e9; padding: 10px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #8bc34a;">
+                                <strong>📊 IMU Raw Data</strong>
+                                <div style="font-size: 10px; color: #555; margin-top: 4px;">
+                                    ${tree.accelerometerX != null ? `<div>Acc: ${tree.accelerometerX.toFixed(3)}, ${tree.accelerometerY?.toFixed(3)}, ${tree.accelerometerZ?.toFixed(3)}</div>` : ''}
+                                    ${tree.gyroscopeX != null ? `<div>Gyro: ${tree.gyroscopeX.toFixed(4)}, ${tree.gyroscopeY?.toFixed(4)}, ${tree.gyroscopeZ?.toFixed(4)}</div>` : ''}
+                                    ${tree.magnetometerX != null ? `<div>Mag: ${tree.magnetometerX.toFixed(1)}, ${tree.magnetometerY?.toFixed(1)}, ${tree.magnetometerZ?.toFixed(1)}</div>` : ''}
+                                </div>
+                            </div>
                             ` : ''}
-                            
-                            <div style="margin-top: 12px; font-size: 11px; color: #444; border-top: 1px dashed #ccc; pt: 8px;">
-                                <div style="display: flex; justify-content: space-between; margin-top: 5px;">
-                                    <span style="color: #666;">📱 기기 GPS:</span>
-                                    <span>${tree.deviceLatitude?.toFixed(6) || '-'}, ${tree.deviceLongitude?.toFixed(6) || '-'}</span>
+
+                            <!-- 카메라 및 시스템 -->
+                            <div style="background: #fff3e0; padding: 10px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #ff9800;">
+                                <strong>📷 촬영 및 기기 정보</strong><br/>
+                                <div style="font-size: 11px; margin-top: 4px;">
+                                    <strong>해상도:</strong> ${tree.imageWidth} × ${tree.imageHeight}<br/>
+                                    <strong>초점/거리:</strong> ${tree.focalLength}mm / ${tree.cameraDistance}m<br/>
+                                    <strong>기기:</strong> ${tree.deviceModel} (${tree.osVersion})
                                 </div>
-                                <div style="display: flex; justify-content: space-between; margin-top: 2px;">
-                                    <span style="color: #666;">🌳 산정 위치:</span>
-                                    <span>${tree.treeLatitude?.toFixed(6) || '-'}, ${tree.treeLongitude?.toFixed(6) || '-'}</span>
+                            </div>
+
+                            <!-- GPS 정보 (정밀 비교) -->
+                            <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; border-left: 4px solid #607d8b;">
+                                <strong style="color: #455a64;">📍 위치 정보 (3종 통합)</strong>
+                                <div style="margin-top: 6px; font-size: 10.5px; color: #333;">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                        <span style="color: #78909c;">📱 기기 GPS:</span>
+                                        <span style="font-family: monospace;">${tree.deviceLatitude?.toFixed(7)}, ${tree.deviceLongitude?.toFixed(7)}</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                        <span style="color: #78909c;">🌳 산정 위치:</span>
+                                        <span style="font-family: monospace;">${tree.treeLatitude?.toFixed(7)}, ${tree.treeLongitude?.toFixed(7)}</span>
+                                    </div>
+                                    ${tree.adjustedTreeLatitude ? `
+                                    <div style="display: flex; justify-content: space-between; margin-top: 4px; padding-top: 4px; border-top: 1px dotted #bccad1; color: #d32f2f; font-weight: bold;">
+                                        <span>📍 최종 보정:</span>
+                                        <span style="font-family: monospace;">${tree.adjustedTreeLatitude.toFixed(7)}, ${tree.adjustedTreeLongitude?.toFixed(7)}</span>
+                                    </div>
+                                    ` : ''}
                                 </div>
-                                ${tree.adjustedTreeLatitude ? `
-                                <div style="display: flex; justify-content: space-between; margin-top: 2px; color: #d32f2f; font-weight: bold;">
-                                    <span>📍 보정 위치:</span>
-                                    <span>${tree.adjustedTreeLatitude.toFixed(6)}, ${tree.adjustedTreeLongitude?.toFixed(6)}</span>
-                                </div>
-                                ` : ''}
                             </div>
                         </div>
                     </div>
