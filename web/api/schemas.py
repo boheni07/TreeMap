@@ -12,11 +12,11 @@ class TreeMeasurementBase(BaseModel):
     species: str
     health_score: float = Field(..., alias='healthScore')
     
-    # 위치 정보
+    # 위치 정보 (알리어스 중복 지원으로 호환성 확보)
     device_latitude: Optional[float] = Field(None, alias='deviceLatitude')  # 기기 위치 (스마트폰 GPS)
     device_longitude: Optional[float] = Field(None, alias='deviceLongitude')
-    tree_latitude: Optional[float] = Field(None, alias='treeLatitude')  # 나무 위치 (계산된 피사체 위치)
-    tree_longitude: Optional[float] = Field(None, alias='treeLongitude')
+    tree_latitude: Optional[float] = Field(None, validation_alias='treeLatitude', serialization_alias='treeLatitude') 
+    tree_longitude: Optional[float] = Field(None, validation_alias='treeLongitude', serialization_alias='treeLongitude')
     
     # IMU 데이터 (관성 측정 장치)
     accelerometer_x: Optional[float] = Field(None, alias='accelerometerX')

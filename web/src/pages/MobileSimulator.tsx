@@ -150,8 +150,10 @@ const MobileSimulator = () => {
                 height: measurementData.tree.height,
                 species: measurementData.tree.species,
                 healthScore: 85.0, // 시뮬레이션 기본값
-                latitude: measurementData.gps.target.lat,
-                longitude: measurementData.gps.target.lon
+                treeLatitude: measurementData.gps.target.lat,
+                treeLongitude: measurementData.gps.target.lon,
+                deviceLatitude: measurementData.gps.device.lat,
+                deviceLongitude: measurementData.gps.device.lon
             })
         })
             .then(async res => {
