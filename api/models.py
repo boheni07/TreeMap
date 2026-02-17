@@ -14,11 +14,13 @@ class TreeMeasurement(Base):
     species = Column(String)
     health_score = Column(Float)
     
-    # 위치 정보
-    device_latitude = Column(Float, nullable=True)  # 기기 위치 (스마트폰 GPS)
-    device_longitude = Column(Float, nullable=True)
-    tree_latitude = Column(Float, nullable=True)  # 나무 위치 (계산된 피사체 위치)
-    tree_longitude = Column(Float, nullable=True)
+    # GPS 위치 정보 (기기, 산정, 조정 3종 데이터)
+    device_latitude = Column(Float)  # 기기 위치 (스마트폰 GPS)
+    device_longitude = Column(Float)
+    tree_latitude = Column(Float)  # 나무 위치 (계산된 피사체 위치)
+    tree_longitude = Column(Float)
+    adjusted_tree_latitude = Column(Float, nullable=True)  # 사용자 보정 위도
+    adjusted_tree_longitude = Column(Float, nullable=True) # 사용자 보정 경도
     
     measured_at = Column(DateTime, default=datetime.datetime.utcnow)
     

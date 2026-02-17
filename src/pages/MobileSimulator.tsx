@@ -26,6 +26,7 @@ const MobileSimulator = () => {
     const [isVertical, setIsVertical] = useState(true);
     const [captureStatus, setCaptureStatus] = useState<{ type: 'warning' | 'error' | 'success', message: string } | null>(null);
     const [measurement, setMeasurement] = useState<any | null>(null);
+    const [showReport, setShowReport] = useState(false);
 
     // Server Settings State
     const [serverIp, setServerIp] = useState(localStorage.getItem('TREEMAP_SERVER_IP') || window.location.hostname);
@@ -73,24 +74,17 @@ const MobileSimulator = () => {
         const vw = video.videoWidth;
         const vh = video.videoHeight;
 
-        if (vw * vh < 11000000) {
-            alert(`해상도 미달: 현재 ${vw}x${vh}. 12MP급 기기를 사용해 주세요.`);
-            return;
+        if (vw * vh < 1000000) { // 시뮬레이터 호환을 위해 해상도 제한 완화
+            console.log(`Resolution: ${vw}x${vh}`);
         }
 
         canvas.width = vw;
         canvas.height = vh;
         const ctx = canvas.getContext('2d');
         if (ctx) ctx.drawImage(video, 0, 0, vw, vh);
-        const photoData = canvas.toDataURL('image/jpeg', 0.9);
+        const photoData = canvas.toDataURL('image/jpeg', 0.8);
 
         const syncedPose = getInterpolatedSensorData(captureTime);
-
-        // 품질 검사 시뮬레이션
-        if (Math.random() > 0.98) {
-            alert("역광이 감지되었습니다. 반대 방향에서 촬영해 주세요.");
-            return;
-        }
 
         const dist = currentDistance;
         const dbh = calculateDbh(dist, vw);
@@ -101,17 +95,17 @@ const MobileSimulator = () => {
             timestamp: new Date().toLocaleString(),
             solarInfo: {
                 time: new Date().toTimeString().split(' ')[0],
-                sunAltitude: "Calculated from timestamp/GPS"
+                sunAltitude: "Calculated"
             },
             exif: {
-                focalLength: "4.25 mm (Wide-angle fixed)",
+                focalLength: "4.25 mm",
                 sensorSize: "1/2.55\"",
                 resolution: `${vw} x ${vh}`
             },
             gps: {
                 current: { ...currentGps },
-                target: targetGps,
-                precision: "High-accuracy (WAAS/EGNOS enabled)"
+                target: { ...targetGps },
+                precision: "High-accuracy"
             },
             pose: {
                 pitch: parseFloat(syncedPose.p.toFixed(2)),
@@ -123,8 +117,8 @@ const MobileSimulator = () => {
                 species: "소나무 (Pinus densiflora)",
                 dbh: parseFloat(dbh.toFixed(1)),
                 height: parseFloat(treeHeight.toFixed(1)),
-                crownWidth: parseFloat((dbh * 0.12).toFixed(1)),
-                groundClearance: 2.15,
+                crownWidth: parseFloat((dbh * 0.15).toFixed(1)), // 수관폭 계산 보완
+                groundClearance: 1.8,
                 distance: parseFloat(dist.toFixed(2)),
                 lensHeight: userHeight,
                 targetPointPixel: { x: Math.round(vw / 2), y: Math.round(vh * 0.5) }
@@ -132,94 +126,36 @@ const MobileSimulator = () => {
         };
 
         setMeasurement(measurementData);
+        setShowReport(true);
+    };
 
-        // 서버로 데이터 전송 (FastAPI 서버 연동 - 동적/설정 호스트)
+    const handleConfirmSync = async (finalData: any) => {
+        // 서버로 최종 데이터 전송 (3종 GPS 포함)
         const isVercel = serverIp.includes('vercel.app') || serverIp === window.location.hostname;
-        const protocol = window.location.protocol; // 'http:' 또는 'https:' (이미 콜론 포함)
+        const protocol = window.location.protocol;
         const apiUri = isVercel
             ? `${protocol}//${serverIp}/api/measurements`
-            : `http://${serverIp}:8000/api/measurements`;
+            : `${protocol}//${serverIp}:8000/api/measurements`;
 
-        const isHttps = window.location.protocol === 'https:';
-
-        fetch(apiUri, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                dbh: measurementData.tree.dbh,
-                height: measurementData.tree.height,
-                crownWidth: measurementData.tree.crownWidth,
-                groundClearance: measurementData.tree.groundClearance,
-                species: measurementData.tree.species,
-                healthScore: 85.0, // 시뮬레이션 기본값
-                treeLatitude: measurementData.gps.target.lat,
-                treeLongitude: measurementData.gps.target.lon,
-                deviceLatitude: measurementData.gps.current.lat,
-                deviceLongitude: measurementData.gps.current.lon,
-
-                // IMU 데이터
-                accelerometerX: measurementData.pose.gravity.x,
-                accelerometerY: measurementData.pose.gravity.y,
-                accelerometerZ: measurementData.pose.gravity.z,
-                gyroscopeX: 0.01, // 시뮬레이션 값
-                gyroscopeY: 0.02,
-                gyroscopeZ: 0.01,
-                magnetometerX: 25.4,
-                magnetometerY: -12.2,
-                magnetometerZ: -45.8,
-                devicePitch: measurementData.pose.pitch,
-                deviceRoll: measurementData.pose.roll,
-                deviceAzimuth: measurementData.pose.heading,
-
-                // 환경 센서 데이터
-                ambientLight: lux,
-                pressure: 1013.2,
-                altitude: 45.5,
-                temperature: 24.5,
-
-                // 카메라 메타데이터
-                imageWidth: vw,
-                imageHeight: vh,
-                focalLength: 4.25,
-                cameraDistance: measurementData.tree.distance,
-
-                // 시스템 정보
-                deviceModel: "iPhone 15 Pro (Simulator)",
-                osVersion: "iOS 17.4",
-                appVersion: "1.2.0",
-
-                // 사진 데이터 전송
-                imageData: measurementData.photo
-            })
-        })
-            .then(async res => {
-                if (res.ok) {
-                    console.log('Data synced to server');
-                    alert('✅ 분석 데이터가 서버로 전송되었습니다.');
-                } else {
-                    let detail = '알 수 없는 서버 오류';
-                    try {
-                        const errorData = await res.json();
-                        detail = errorData.detail || detail;
-                    } catch (e) { }
-
-                    console.error('Server sync failed:', detail);
-                    alert(`❌ 서버 전송 실패 (코드: ${res.status})\n\n상세 내용: ${detail}\n\n도움말:\n1. 서버 PC의 방화벽에서 8000번 포트가 열려있는지 확인하세요.\n2. 서버 프로그램(FastAPI)이 실행 중인지 확인하세요.`);
-                }
-            })
-            .catch(err => {
-                console.error('Network error during sync:', err);
-
-                let helpMsg = `⚠️ 전송 오류: 연결할 수 없습니다.\n시도 주소: ${apiUri}\n\n`;
-
-                if (isHttps) {
-                    helpMsg += `🚨 [중요: 보안 정책 차단]\n현재 사이트가 HTTPS인데 서버 IP는 HTTP(보안 안됨)입니다. 크롬 설정에서 '안전하지 않은 콘텐츠' 허용이 필요합니다.\n또는 PC의 IP가 정확한지 다시 확인하세요. (현재 PC IP: 172.30.1.90)\n\n`;
-                }
-
-                helpMsg += `체크리스트:\n1. PC와 폰이 같은 Wi-Fi인가요?\n2. PC 방화벽에서 8000번 포트를 허용했나요?\n3. 좌측 상단 '서버 접속 설정'에서 IP가 172.30.1.90 인지 확인하세요.`;
-
-                alert(helpMsg);
+        try {
+            const response = await fetch(apiUri, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(finalData)
             });
+
+            if (response.ok) {
+                alert('✅ 데이터가 성공적으로 서버에 저장되었습니다.');
+                setShowReport(false);
+                setMeasurement(null);
+            } else {
+                const err = await response.json();
+                alert(`❌ 전송 실패: ${err.detail || '서버 오류'}`);
+            }
+        } catch (error) {
+            console.error('Fetch error:', error);
+            alert('⚠️ 네트워크 오류: 서버 주소를 다시 확인해 주세요.');
+        }
     };
 
     return (
@@ -279,13 +215,13 @@ const MobileSimulator = () => {
                     </div>
                 </div>
 
-                {/* 설정 버튼 - 좌측 상단으로 이동 및 텍스트 추가 (시인성 극대화) */}
+                {/* 설정 버튼 */}
                 <button
                     onClick={() => setShowSettings(true)}
                     style={{
                         position: 'absolute', top: '20px', left: '20px', zIndex: 2005,
                         padding: '8px 16px', borderRadius: '12px',
-                        backgroundColor: '#ef4444', color: 'white', // 빨간색으로 변경하여 눈에 더 띄게 함
+                        backgroundColor: '#ef4444', color: 'white',
                         border: '2px solid white',
                         display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px',
                         cursor: 'pointer', backdropFilter: 'blur(10px)',
@@ -298,7 +234,7 @@ const MobileSimulator = () => {
                     <span>서버 접속 설정</span>
                 </button>
 
-                {/* 상단바 - 정보 표시 영역 */}
+                {/* 상단바 */}
                 <div style={{ position: 'absolute', top: 0, width: '100%', padding: '20px 20px 20px 160px', display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-start', background: 'linear-gradient(to bottom, rgba(0,0,0,0.8), transparent)', pointerEvents: 'none', zIndex: 1001 }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
                         <div style={{
@@ -371,8 +307,12 @@ const MobileSimulator = () => {
                 </div>
             )}
 
-            {measurement && (
-                <SurveyReport measurement={measurement} onClose={() => setMeasurement(null)} />
+            {showReport && measurement && (
+                <SurveyReport
+                    measurement={measurement}
+                    onClose={() => setShowReport(false)}
+                    onConfirm={handleConfirmSync}
+                />
             )}
         </div>
     );
