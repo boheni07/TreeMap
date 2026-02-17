@@ -153,7 +153,38 @@ const MobileSimulator = () => {
                 treeLatitude: measurementData.gps.target.lat,
                 treeLongitude: measurementData.gps.target.lon,
                 deviceLatitude: measurementData.gps.current.lat,
-                deviceLongitude: measurementData.gps.current.lon
+                deviceLongitude: measurementData.gps.current.lon,
+
+                // IMU 데이터
+                accelerometerX: measurementData.pose.gravity.x,
+                accelerometerY: measurementData.pose.gravity.y,
+                accelerometerZ: measurementData.pose.gravity.z,
+                gyroscopeX: 0.01, // 시뮬레이션 값
+                gyroscopeY: 0.02,
+                gyroscopeZ: 0.01,
+                magnetometerX: 25.4,
+                magnetometerY: -12.2,
+                magnetometerZ: -45.8,
+                devicePitch: measurementData.pose.pitch,
+                deviceRoll: measurementData.pose.roll,
+                deviceAzimuth: measurementData.pose.heading,
+
+                // 환경 센서 데이터
+                ambientLight: lux,
+                pressure: 1013.2,
+                altitude: 45.5,
+                temperature: 24.5,
+
+                // 카메라 메타데이터
+                imageWidth: vw,
+                imageHeight: vh,
+                focalLength: 4.25,
+                cameraDistance: measurementData.tree.distance,
+
+                // 시스템 정보
+                deviceModel: "iPhone 15 Pro (Simulator)",
+                osVersion: "iOS 17.4",
+                appVersion: "1.2.0"
             })
         })
             .then(async res => {
