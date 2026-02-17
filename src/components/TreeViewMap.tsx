@@ -164,6 +164,25 @@ const TreeViewMap = () => {
                         ${tree.image_data ? `<img src="${tree.image_data}" style="width: 100%; border-radius: 8px; margin-bottom: 12px; border: 1px solid #ddd; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" />` : ''}
                         <h3 style="margin: 0 0 10px 0; border-bottom: 2px solid #4CAF50; padding-bottom: 5px; color: #2c3e50;">${tree.species}</h3>
                         
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px solid #eee;">
+                            <div style="text-align: center;">
+                                <div style="font-size: 10px; color: #666; font-weight: bold;">수고 (H)</div>
+                                <div style="font-size: 16px; color: #2e7d32; font-weight: 800;">${tree.height}m</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 10px; color: #666; font-weight: bold;">수관폭 (W)</div>
+                                <div style="font-size: 16px; color: #2e7d32; font-weight: 800;">${tree.crown_width || '-'}m</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 10px; color: #666; font-weight: bold;">지하고 (C)</div>
+                                <div style="font-size: 16px; color: #1976d2; font-weight: 800;">${tree.ground_clearance || '-'}m</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 10px; color: #666; font-weight: bold;">흉고직경 (D)</div>
+                                <div style="font-size: 16px; color: #d32f2f; font-weight: 800;">${tree.dbh}cm</div>
+                            </div>
+                        </div>
+
                         <div style="font-size: 13px; line-height: 1.8;">
                             <div style="background: #f8f9fa; padding: 8px; border-radius: 4px; margin-bottom: 8px;">
                                 <strong>📏 기본 측정 데이터</strong><br/>

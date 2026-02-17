@@ -148,6 +148,8 @@ const MobileSimulator = () => {
             body: JSON.stringify({
                 dbh: measurementData.tree.dbh,
                 height: measurementData.tree.height,
+                crownWidth: measurementData.tree.crownWidth,
+                groundClearance: measurementData.tree.groundClearance,
                 species: measurementData.tree.species,
                 healthScore: 85.0, // 시뮬레이션 기본값
                 treeLatitude: measurementData.gps.target.lat,

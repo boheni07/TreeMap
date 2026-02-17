@@ -9,6 +9,8 @@ class TreeMeasurementBase(BaseModel):
     # 기본 측정 데이터
     dbh: float
     height: float
+    crown_width: Optional[float] = Field(None, alias='crownWidth')
+    ground_clearance: Optional[float] = Field(None, alias='groundClearance')
     species: str
     health_score: float = Field(..., alias='healthScore')
     

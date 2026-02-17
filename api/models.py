@@ -9,6 +9,8 @@ class TreeMeasurement(Base):
     id = Column(Integer, primary_key=True, index=True)
     dbh = Column(Float)
     height = Column(Float)
+    crown_width = Column(Float, nullable=True)  # 수관폭 (m)
+    ground_clearance = Column(Float, nullable=True)  # 지하고 (m)
     species = Column(String)
     health_score = Column(Float)
     
