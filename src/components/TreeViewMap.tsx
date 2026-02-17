@@ -245,12 +245,22 @@ const TreeViewMap = () => {
                 const viewLon = lastTree.treeLongitude ?? lastTree.deviceLongitude ?? 0;
 
                 if (viewLat !== 0 && viewLon !== 0) {
-                    mapInstance.current.setView([viewLat, viewLon], 17); // 조금 더 줌인하여 강조
+                    console.log(`Auto-focusing on latest tree: ${lastTree.species} at [${viewLat}, ${viewLon}]`);
 
-                    // 마운트 직후나 대량 데이터 처리 시 팝업 열기가 무시될 수 있으므로 약간의 지연 후 실행
+                    // 지도가 완전히 렌더링된 후 이동하도록 지연 시간 최적화
                     setTimeout(() => {
-                        latestMarker?.openPopup();
-                    }, 100);
+                        if (mapInstance.current) {
+                            mapInstance.current.flyTo([viewLat, viewLon], 18, {
+                                animate: true,
+                                duration: 1.5
+                            });
+
+                            // 이동 애니메이션이 끝난 후 팝업 열기
+                            setTimeout(() => {
+                                latestMarker?.openPopup();
+                            }, 1600);
+                        }
+                    }, 300);
                 }
             }
         }
