@@ -1,4 +1,4 @@
-from .index import app
+from api.index import app
 
 if __name__ == "__main__":
     import uvicorn
