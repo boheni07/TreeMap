@@ -19,8 +19,8 @@
             "destination": "web/api/index.py"
         },
         {
-            "source": "/(.*)",
-            "destination": "web/$1"
+            "source": "/((?!api/).*)",
+            "destination": "/index.html"
         }
     ]
 }
