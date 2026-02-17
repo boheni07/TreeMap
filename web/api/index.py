@@ -4,8 +4,9 @@ from sqlalchemy.orm import Session
 import os
 import logging
 from typing import List
+from contextlib import asynccontextmanager
 
-# Vercel 런타임 호환성을 위해 표준 임포트 사용
+# Vercel 및 로컬 환경 호환 임포트
 import models
 import schemas
 import database
@@ -18,19 +19,27 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# 데이터베이스 테이블 생성
-try:
-    models.Base.metadata.create_all(bind=engine)
-    logger.info("Database tables initialized successfully")
-except Exception as e:
-    logger.error(f"Database initialization warning/error: {e}")
-    if not os.environ.get('VERCEL'):
-        raise
+# Lifespan 관리 (DB 초기화)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # 앱 시작 시: 데이터베이스 테이블 생성
+    try:
+        models.Base.metadata.create_all(bind=engine)
+        logger.info("Database tables initialized successfully via lifespan")
+    except Exception as e:
+        logger.error(f"Database initialization warning/error: {e}")
+        # Vercel 환경에서는 실패해도 앱 실행은 계속 시도
+        if not os.environ.get('VERCEL'):
+            raise
+    yield
+    # 앱 종료 시: 필요한 정리 작업 수행
+    pass
 
 app = FastAPI(
     title="TreeMap Backend API",
     description="AI 기반 수목 측정 데이터 관리 API",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # CORS 설정
