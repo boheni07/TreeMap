@@ -39,7 +39,19 @@ SAMPLE_TREES = [
         "tree_longitude": 127.0423,
         "device_latitude": 37.5450,
         "device_longitude": 127.0422,
-        "device_model": "iPhone 15 Pro"
+        "device_model": "iPhone 15 Pro",
+        "os_version": "iOS 17.4",
+        "device_pitch": 89.2,
+        "device_roll": 0.5,
+        "ambient_light": 6500.0,
+        "pressure": 1012.5,
+        "altitude": 42.1,
+        "temperature": 22.4,
+        "focal_length": 4.25,
+        "camera_distance": 5.4,
+        "accelerometer_x": 0.02,
+        "accelerometer_y": -9.81,
+        "accelerometer_z": 0.15
     },
     {
         "species": "느티나무 (Zelkova serrata)",
@@ -50,7 +62,16 @@ SAMPLE_TREES = [
         "tree_longitude": 127.0431,
         "device_latitude": 37.5447,
         "device_longitude": 127.0430,
-        "device_model": "Samsung Galaxy S24"
+        "device_model": "Samsung Galaxy S24",
+        "os_version": "Android 14",
+        "device_pitch": 90.5,
+        "device_roll": -0.2,
+        "ambient_light": 7200.0,
+        "pressure": 1013.1,
+        "altitude": 43.5,
+        "temperature": 23.1,
+        "focal_length": 5.4,
+        "camera_distance": 7.2
     },
     {
         "species": "은행나무 (Ginkgo biloba)",
@@ -61,7 +82,14 @@ SAMPLE_TREES = [
         "tree_longitude": 127.0435,
         "device_latitude": 37.5454,
         "device_longitude": 127.0434,
-        "device_model": "Google Pixel 8"
+        "device_model": "Google Pixel 8",
+        "os_version": "Android 14",
+        "device_pitch": 88.7,
+        "device_roll": 1.1,
+        "ambient_light": 5800.0,
+        "pressure": 1012.8,
+        "altitude": 41.8,
+        "focal_length": 4.5
     },
     {
         "species": "벚나무 (Prunus serrulata)",
@@ -72,7 +100,11 @@ SAMPLE_TREES = [
         "tree_longitude": 127.0428,
         "device_latitude": 37.5441,
         "device_longitude": 127.0427,
-        "device_model": "iPhone 14"
+        "device_model": "iPhone 14",
+        "os_version": "iOS 16.6",
+        "device_pitch": 91.2,
+        "ambient_light": 4500.0,
+        "focal_length": 3.99
     },
     {
         "species": "메타세쿼이아 (Metasequoia)",
@@ -83,7 +115,15 @@ SAMPLE_TREES = [
         "tree_longitude": 127.0440,
         "device_latitude": 37.5444,
         "device_longitude": 127.0439,
-        "device_model": "iPhone 15 Pro Max"
+        "device_model": "iPhone 15 Pro Max",
+        "os_version": "iOS 17.5",
+        "device_pitch": 90.0,
+        "device_roll": 0.0,
+        "ambient_light": 8500.0,
+        "pressure": 1014.0,
+        "altitude": 45.0,
+        "temperature": 21.8,
+        "camera_distance": 10.5
     }
 ]
 
