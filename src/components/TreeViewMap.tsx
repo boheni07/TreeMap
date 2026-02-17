@@ -258,7 +258,12 @@ const TreeViewMap = () => {
                                         <span>📍 최종 보정:</span>
                                         <span style="font-family: monospace;">${tree.adjustedTreeLatitude.toFixed(7)}, ${tree.adjustedTreeLongitude?.toFixed(7)}</span>
                                     </div>
-                                    ` : ''}
+                                    ` : `
+                                    <div style="display: flex; justify-content: space-between; margin-top: 4px; padding-top: 4px; border-top: 1px dotted #bccad1; color: #78909c;">
+                                        <span>📍 최종 보정:</span>
+                                        <span>미보정 (산정 위치 사용)</span>
+                                    </div>
+                                    `}
                                 </div>
                             </div>
                         </div>
@@ -285,8 +290,9 @@ const TreeViewMap = () => {
             // 마지막 데이터 위치로 시점 이동 및 팝업 열기
             if (latestMarker) {
                 const lastTree = sortedTrees[sortedTrees.length - 1];
-                const viewLat = lastTree.treeLatitude ?? lastTree.deviceLatitude ?? 0;
-                const viewLon = lastTree.treeLongitude ?? lastTree.deviceLongitude ?? 0;
+                // 포커싱 좌표 우선순위: 보정 > 산정 > 기기
+                const viewLat = lastTree.adjustedTreeLatitude ?? lastTree.treeLatitude ?? lastTree.deviceLatitude ?? 0;
+                const viewLon = lastTree.adjustedTreeLongitude ?? lastTree.treeLongitude ?? lastTree.deviceLongitude ?? 0;
 
                 if (viewLat !== 0 && viewLon !== 0) {
                     console.log(`Auto-focusing on latest tree: ${lastTree.species} at [${viewLat}, ${viewLon}]`);
