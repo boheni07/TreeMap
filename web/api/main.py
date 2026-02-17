@@ -5,13 +5,11 @@ import os
 import logging
 from typing import List
 
-# 상대 경로 임포트 대신 직접 참조 또는 패키지 루트 고려
-try:
-    from . import models, schemas, database
-    from .database import engine, get_db
-except ImportError:
-    import models, schemas, database
-    from database import engine, get_db
+# Vercel 런타임 호환성을 위해 표준 임포트 사용
+import models
+import schemas
+import database
+from database import engine, get_db
 
 # 로깅 설정
 logging.basicConfig(
