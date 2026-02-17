@@ -62,6 +62,7 @@ interface TreeData {
     imageHeight?: number;
     focalLength?: number;
     cameraDistance?: number;
+    imageData?: string; // Base64 이미지 데이터
 
     // 시스템 정보
     deviceModel?: string;
@@ -78,6 +79,10 @@ interface TreeData {
     serverGroundClearance?: number;
     serverHealthScore?: number;
     serverConfidence?: number;
+
+    // 추가 필드 (camelCase)
+    crownWidth?: number;
+    groundClearance?: number;
 }
 
 const TreeViewMap = () => {
@@ -174,9 +179,9 @@ const TreeViewMap = () => {
 
                 const popupContent = `
                     <div style="min-width: 280px; max-width: 400px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-                        ${tree.image_data ? `
+                        ${tree.imageData ? `
                         <div style="position: relative; margin-bottom: 12px;">
-                            <img src="${tree.image_data}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 12px; border: 1px solid #ddd; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+                            <img src="${tree.imageData}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 12px; border: 1px solid #ddd; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
                             <div style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.6); color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px;">ID: ${tree.id}</div>
                         </div>
                         ` : ''}
@@ -217,7 +222,7 @@ const TreeViewMap = () => {
                                 <div style="text-align: center; background: white; padding: 6px; border-radius: 6px; border: 1px solid #d1d9e6;">
                                     <div style="font-size: 8px; color: #78909c;">수관폭 (Width)</div>
                                     <div style="font-size: 13px; font-weight: 800;">
-                                        <span style="color: #666; font-size: 10px;">${tree.crown_width || '-'}</span> 
+                                        <span style="color: #666; font-size: 10px;">${tree.crownWidth || '-'}</span> 
                                         <span style="margin: 0 2px; color: #ccc;">→</span> 
                                         <span style="color: #1b5e20;">${tree.serverCrownWidth || '-'}</span>
                                         <small style="font-size: 8px; color: #999;">m</small>
@@ -227,7 +232,7 @@ const TreeViewMap = () => {
                                 <div style="text-align: center; background: white; padding: 6px; border-radius: 6px; border: 1px solid #d1d9e6;">
                                     <div style="font-size: 8px; color: #78909c;">지하고 (Clr.)</div>
                                     <div style="font-size: 13px; font-weight: 800;">
-                                        <span style="color: #666; font-size: 10px;">${tree.ground_clearance || '-'}</span> 
+                                        <span style="color: #666; font-size: 10px;">${tree.groundClearance || '-'}</span> 
                                         <span style="margin: 0 2px; color: #ccc;">→</span> 
                                         <span style="color: #0277bd;">${tree.serverGroundClearance || '-'}</span>
                                         <small style="font-size: 8px; color: #999;">m</small>

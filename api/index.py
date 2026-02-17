@@ -30,7 +30,9 @@ logger = logging.getLogger(__name__)
 
 from contextlib import asynccontextmanager
 
-# [중요] 자동 시딩을 위한 샘플 데이터 정의
+# [중요] 자동 시딩을 위한 샘플 데이터 정의 (Base64 이미지 포함)
+SAMPLE_IMAGE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==" # 1x1 Red Dot
+
 SAMPLE_TREES = [
     {
         "species": "소나무 (Pinus densiflora)",
@@ -55,7 +57,10 @@ SAMPLE_TREES = [
         "camera_distance": 5.4,
         "accelerometer_x": 0.02,
         "accelerometer_y": -9.81,
-        "accelerometer_z": 0.15
+        "accelerometer_z": 0.15,
+        "image_data": SAMPLE_IMAGE,
+        "image_width": 1080,
+        "image_height": 1920
     },
     {
         "species": "느티나무 (Zelkova serrata)",
@@ -77,7 +82,8 @@ SAMPLE_TREES = [
         "altitude": 43.5,
         "temperature": 23.1,
         "focal_length": 5.4,
-        "camera_distance": 7.2
+        "camera_distance": 7.2,
+        "image_data": SAMPLE_IMAGE
     },
     {
         "species": "은행나무 (Ginkgo biloba)",
@@ -97,7 +103,8 @@ SAMPLE_TREES = [
         "ambient_light": 5800.0,
         "pressure": 1012.8,
         "altitude": 41.8,
-        "focal_length": 4.5
+        "focal_length": 4.5,
+        "image_data": SAMPLE_IMAGE
     },
     {
         "species": "벚나무 (Prunus serrulata)",
@@ -114,7 +121,8 @@ SAMPLE_TREES = [
         "os_version": "iOS 16.6",
         "device_pitch": 91.2,
         "ambient_light": 4500.0,
-        "focal_length": 3.99
+        "focal_length": 3.99,
+        "image_data": SAMPLE_IMAGE
     },
     {
         "species": "메타세쿼이아 (Metasequoia)",
@@ -137,7 +145,8 @@ SAMPLE_TREES = [
         "pressure": 1014.0,
         "altitude": 45.0,
         "temperature": 21.8,
-        "camera_distance": 10.5
+        "camera_distance": 10.5,
+        "image_data": SAMPLE_IMAGE
     }
 ]
 
