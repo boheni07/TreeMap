@@ -44,3 +44,12 @@ android/app/src/main/java/io/flutter/plugins/
 *.swo
 .project
 .vscode/
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.db
+.venv/
+venv/
+ENV/
+env/
