@@ -152,8 +152,8 @@ const MobileSimulator = () => {
                 healthScore: 85.0, // 시뮬레이션 기본값
                 treeLatitude: measurementData.gps.target.lat,
                 treeLongitude: measurementData.gps.target.lon,
-                deviceLatitude: measurementData.gps.device.lat,
-                deviceLongitude: measurementData.gps.device.lon
+                deviceLatitude: measurementData.gps.current.lat,
+                deviceLongitude: measurementData.gps.current.lon
             })
         })
             .then(async res => {
