@@ -56,6 +56,17 @@ class TreeMeasurementBase(BaseModel):
     # 사진 데이터 (Base64)
     image_data: Optional[str] = Field(None, alias='imageData')
 
+    # 서버 AI 처리 결과 (새로 추가)
+    is_server_processed: Optional[int] = Field(0, alias='isServerProcessed')
+    server_processed_at: Optional[datetime] = Field(None, alias='serverProcessedAt')
+    server_species: Optional[str] = Field(None, alias='serverSpecies')
+    server_dbh: Optional[float] = Field(None, alias='serverDbh')
+    server_height: Optional[float] = Field(None, alias='serverHeight')
+    server_crown_width: Optional[float] = Field(None, alias='serverCrownWidth')
+    server_ground_clearance: Optional[float] = Field(None, alias='serverGroundClearance')
+    server_health_score: Optional[float] = Field(None, alias='serverHealthScore')
+    server_confidence: Optional[float] = Field(None, alias='serverConfidence')
+
 class TreeMeasurementCreate(TreeMeasurementBase):
     pass
 

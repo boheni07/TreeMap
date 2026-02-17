@@ -57,3 +57,14 @@ class TreeMeasurement(Base):
     
     # 사진 데이터 (Base64 형식)
     image_data = Column(String, nullable=True)
+
+    # 서버 AI 처리 결과 (새로 추가)
+    is_server_processed = Column(Integer, default=0) # 0: 미처리, 1: 처리완료
+    server_processed_at = Column(DateTime, nullable=True)
+    server_species = Column(String, nullable=True)
+    server_dbh = Column(Float, nullable=True)
+    server_height = Column(Float, nullable=True)
+    server_crown_width = Column(Float, nullable=True)
+    server_ground_clearance = Column(Float, nullable=True)
+    server_health_score = Column(Float, nullable=True)
+    server_confidence = Column(Float, nullable=True) # AI 확신도 (0~1)

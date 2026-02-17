@@ -67,6 +67,17 @@ interface TreeData {
     deviceModel?: string;
     osVersion?: string;
     appVersion?: string;
+
+    // 서버 AI 결과
+    isServerProcessed?: number;
+    serverProcessedAt?: string;
+    serverSpecies?: string;
+    serverDbh?: number;
+    serverHeight?: number;
+    serverCrownWidth?: number;
+    serverGroundClearance?: number;
+    serverHealthScore?: number;
+    serverConfidence?: number;
 }
 
 const TreeViewMap = () => {
@@ -176,26 +187,57 @@ const TreeViewMap = () => {
                         </div>
                         
                         <!-- 주요 측정 수치 (Grid) -->
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 15px; background: #f0f4f7; padding: 12px; border-radius: 10px; border: 1px solid #e0e6ed;">
-                            <div style="text-align: center; border-right: 1px solid #d1d9e6;">
-                                <div style="font-size: 9px; color: #78909c; font-weight: bold; text-transform: uppercase;">Chest DBH</div>
-                                <div style="font-size: 18px; color: #d32f2f; font-weight: 900;">${tree.dbh}<small style="font-size: 10px; font-weight: 400; margin-left:1px;">cm</small></div>
-                            </div>
-                            <div style="text-align: center;">
-                                <div style="font-size: 9px; color: #78909c; font-weight: bold; text-transform: uppercase;">Total Height</div>
-                                <div style="font-size: 18px; color: #2e7d32; font-weight: 900;">${tree.height}<small style="font-size: 10px; font-weight: 400; margin-left:1px;">m</small></div>
-                            </div>
-                            <div style="text-align: center; border-right: 1px solid #d1d9e6; margin-top: 8px; pt: 8px; border-top: 1px solid #d1d9e6;">
-                                <div style="font-size: 9px; color: #78909c; font-weight: bold; text-transform: uppercase;">Crown Width</div>
-                                <div style="font-size: 16px; color: #1b5e20; font-weight: 800;">${tree.crown_width || '-'}<small style="font-size: 10px; font-weight: 400;">m</small></div>
-                            </div>
-                            <div style="text-align: center; margin-top: 8px; pt: 8px; border-top: 1px solid #d1d9e6;">
-                                <div style="font-size: 9px; color: #78909c; font-weight: bold; text-transform: uppercase;">Ground Clr.</div>
-                                <div style="font-size: 16px; color: #0277bd; font-weight: 800;">${tree.ground_clearance || '-'}<small style="font-size: 10px; font-weight: 400;">m</small></div>
-                            </div>
+                        <div style="background: #f0f4f7; padding: 12px; border-radius: 10px; border: 1px solid #e0e6ed; margin-bottom: 15px;">
+                             <div style="font-size: 10px; color: #455a64; font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #d1d9e6; padding-bottom: 4px; display: flex; justify-content: space-between;">
+                                <span>📊 측정 수치 비교</span>
+                                <span style="color: #2e7d32;">(Smartphone vs Server AI)</span>
+                             </div>
+                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                <div style="text-align: center; background: white; padding: 6px; border-radius: 6px; border: 1px solid #d1d9e6;">
+                                    <div style="font-size: 8px; color: #78909c;">흉고직경 (DBH)</div>
+                                    <div style="font-size: 14px; font-weight: 800;">
+                                        <span style="color: #666; font-size: 11px;">${tree.dbh}</span> 
+                                        <span style="margin: 0 4px; color: #ccc;">→</span> 
+                                        <span style="color: #d32f2f;">${tree.serverDbh || '-'}</span>
+                                        <small style="font-size: 8px; color: #999;">cm</small>
+                                    </div>
+                                </div>
+                                <div style="text-align: center; background: white; padding: 6px; border-radius: 6px; border: 1px solid #d1d9e6;">
+                                    <div style="font-size: 8px; color: #78909c;">수고 (Height)</div>
+                                    <div style="font-size: 14px; font-weight: 800;">
+                                        <span style="color: #666; font-size: 11px;">${tree.height}</span> 
+                                        <span style="margin: 0 4px; color: #ccc;">→</span> 
+                                        <span style="color: #2e7d32;">${tree.serverHeight || '-'}</span>
+                                        <small style="font-size: 8px; color: #999;">m</small>
+                                    </div>
+                                </div>
+                             </div>
                         </div>
 
                         <div style="max-height: 250px; overflow-y: auto; padding-right: 5px; font-size: 12px; line-height: 1.6;">
+                            <!-- 서버 AI 처리 상태 정보 -->
+                            <div style="background: #fff9c4; padding: 10px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #fbc02d; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                                <strong>🤖 서버 AI 정밀 분석</strong><br/>
+                                <div style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 11px;">
+                                    <span>상태:</span>
+                                    <span style="font-weight: bold; color: ${tree.isServerProcessed ? '#2e7d32' : '#f57c00'}">
+                                        ${tree.isServerProcessed ? '분석 완료' : '대기 중'}
+                                    </span>
+                                </div>
+                                ${tree.serverConfidence ? `
+                                <div style="display: flex; justify-content: space-between; font-size: 11px;">
+                                    <span>AI 확신도:</span>
+                                    <span style="font-weight: bold;">${(tree.serverConfidence * 100).toFixed(1)}%</span>
+                                </div>
+                                ` : ''}
+                                ${tree.serverSpecies ? `
+                                <div style="display: flex; justify-content: space-between; font-size: 11px;">
+                                    <span>정밀 판독 수종:</span>
+                                    <span style="font-weight: bold; color: #1565c0;">${tree.serverSpecies}</span>
+                                </div>
+                                ` : ''}
+                            </div>
+
                             <!-- 건강도 및 기본 정보 -->
                             <div style="background: #ffffff; padding: 10px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #4CAF50; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                                 <strong>🌿 생육 상태 및 정보</strong><br/>

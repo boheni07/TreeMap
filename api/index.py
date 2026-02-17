@@ -15,12 +15,14 @@ if current_dir not in sys.path:
 try:
     import models, schemas, database
     from database import engine, get_db
+    from services.ai_service import TreeAIService
 except ImportError as e:
     logger = logging.getLogger(__name__)
     logger.error(f"Import error at start: {e}")
     # 재시도 (패키지 형태)
     from . import models, schemas, database
     from .database import engine, get_db
+    from .services.ai_service import TreeAIService
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
@@ -214,6 +216,17 @@ def create_measurement(measurement: schemas.TreeMeasurementCreate, db: Session =
         db.add(db_measurement)
         db.commit()
         db.refresh(db_measurement)
+
+        # [추가] 서버 측 정밀 AI 분석 트리거
+        try:
+            TreeAIService.process_measurement(db_measurement)
+            db.commit() # AI 처리 결과 반영
+            db.refresh(db_measurement)
+            logger.info(f"Server-side AI processing successful for Measurement ID: {db_measurement.id}")
+        except Exception as ai_err:
+            logger.error(f"Server AI Trigger Error: {ai_err}")
+            # AI 처리가 실패하더라도 기본 데이터는 저장된 상태 유지
+
         return db_measurement
     except Exception as e:
         logger.error(f"Runtime Error: {e}")
