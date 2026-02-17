@@ -161,6 +161,7 @@ const TreeViewMap = () => {
 
                 const popupContent = `
                     <div style="min-width: 250px; max-width: 350px;">
+                        ${tree.image_data ? `<img src="${tree.image_data}" style="width: 100%; border-radius: 8px; margin-bottom: 12px; border: 1px solid #ddd; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" />` : ''}
                         <h3 style="margin: 0 0 10px 0; border-bottom: 2px solid #4CAF50; padding-bottom: 5px; color: #2c3e50;">${tree.species}</h3>
                         
                         <div style="font-size: 13px; line-height: 1.8;">

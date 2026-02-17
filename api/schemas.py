@@ -49,6 +49,9 @@ class TreeMeasurementBase(BaseModel):
     os_version: Optional[str] = Field(None, alias='osVersion')
     app_version: Optional[str] = Field(None, alias='appVersion')
 
+    # 사진 데이터 (Base64)
+    image_data: Optional[str] = Field(None, alias='imageData')
+
 class TreeMeasurementCreate(TreeMeasurementBase):
     pass
 

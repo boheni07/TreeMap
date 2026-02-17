@@ -50,3 +50,6 @@ class TreeMeasurement(Base):
     device_model = Column(String, nullable=True)  # 기기 모델명
     os_version = Column(String, nullable=True)  # OS 버전
     app_version = Column(String, nullable=True)  # 앱 버전
+    
+    # 사진 데이터 (Base64 형식)
+    image_data = Column(String, nullable=True)

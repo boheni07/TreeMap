@@ -199,7 +199,8 @@ def create_measurement(measurement: schemas.TreeMeasurementCreate, db: Session =
             camera_distance=measurement.camera_distance,
             device_model=measurement.device_model,
             os_version=measurement.os_version,
-            app_version=measurement.app_version
+            app_version=measurement.app_version,
+            image_data=measurement.image_data
         )
         db.add(db_measurement)
         db.commit()

@@ -184,7 +184,10 @@ const MobileSimulator = () => {
                 // 시스템 정보
                 deviceModel: "iPhone 15 Pro (Simulator)",
                 osVersion: "iOS 17.4",
-                appVersion: "1.2.0"
+                appVersion: "1.2.0",
+
+                // 사진 데이터 전송
+                imageData: measurementData.photo
             })
         })
             .then(async res => {
