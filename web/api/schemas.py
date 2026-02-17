@@ -1,8 +1,11 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 from typing import Optional
 
 class TreeMeasurementBase(BaseModel):
+    # Pydantic v2 설정
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
     # 기본 측정 데이터
     dbh: float
     height: float
@@ -45,10 +48,6 @@ class TreeMeasurementBase(BaseModel):
     device_model: Optional[str] = Field(None, alias='deviceModel')
     os_version: Optional[str] = Field(None, alias='osVersion')
     app_version: Optional[str] = Field(None, alias='appVersion')
-
-    class Config:
-        from_attributes = True
-        populate_by_name = True
 
 class TreeMeasurementCreate(TreeMeasurementBase):
     pass

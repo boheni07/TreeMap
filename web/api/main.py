@@ -1,10 +1,17 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-import models, schemas, database, os
-from database import engine, get_db
-from typing import List
+import os
 import logging
+from typing import List
+
+# 상대 경로 임포트 대신 직접 참조 또는 패키지 루트 고려
+try:
+    from . import models, schemas, database
+    from .database import engine, get_db
+except ImportError:
+    import models, schemas, database
+    from database import engine, get_db
 
 # 로깅 설정
 logging.basicConfig(
@@ -15,12 +22,9 @@ logger = logging.getLogger(__name__)
 
 # 데이터베이스 테이블 생성
 try:
-    # Vercel 환경에서는 배포 시점에 테이블이 이미 생성되어 있거나, 
-    # 런타임에 /tmp에 생성되어야 함
     models.Base.metadata.create_all(bind=engine)
     logger.info("Database tables initialized successfully")
 except Exception as e:
-    # Vercel 환경에서는 로그만 남기고 우선 앱 실행을 시도 (복구 가능성 고려)
     logger.error(f"Database initialization warning/error: {e}")
     if not os.environ.get('VERCEL'):
         raise
@@ -34,7 +38,7 @@ app = FastAPI(
 # CORS 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # 실제 운영환경에서는 특정 도메인만 허용하도록 권장
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -47,17 +51,7 @@ def read_root():
 
 @app.post("/api/measurements", response_model=schemas.TreeMeasurement, tags=["Measurements"])
 def create_measurement(measurement: schemas.TreeMeasurementCreate, db: Session = Depends(get_db)):
-    """
-    새로운 수목 측정 데이터 생성
-    
-    - **dbh**: 흉고직경 (cm)
-    - **height**: 수고 (m)
-    - **species**: 수종
-    - **healthScore**: 건강도 점수 (0-100)
-    - **latitude**: 위도 (선택)
-    - **longitude**: 경도 (선택)
-    - **센서 데이터**: IMU, 환경 센서, 카메라 메타데이터, 시스템 정보 (모두 선택)
-    """
+    """새로운 수목 측정 데이터 생성"""
     try:
         db_measurement = models.TreeMeasurement(
             # 기본 측정 데이터
@@ -110,12 +104,7 @@ def create_measurement(measurement: schemas.TreeMeasurementCreate, db: Session =
 
 @app.get("/api/measurements", response_model=List[schemas.TreeMeasurement], tags=["Measurements"])
 def read_measurements(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    """
-    수목 측정 데이터 목록 조회
-    
-    - **skip**: 건너뛸 레코드 수
-    - **limit**: 조회할 최대 레코드 수 (최대 100)
-    """
+    """수목 측정 데이터 목록 조회"""
     try:
         if limit > 100:
             limit = 100
@@ -125,4 +114,3 @@ def read_measurements(skip: int = 0, limit: int = 100, db: Session = Depends(get
     except Exception as e:
         logger.error(f"Failed to retrieve measurements: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to retrieve measurements: {str(e)}")
-
