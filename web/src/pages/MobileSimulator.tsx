@@ -135,8 +135,9 @@ const MobileSimulator = () => {
 
         // 서버로 데이터 전송 (FastAPI 서버 연동 - 동적/설정 호스트)
         const isVercel = serverIp.includes('vercel.app') || serverIp === window.location.hostname;
+        const protocol = window.location.protocol; // 'http:' 또는 'https:' (이미 콜론 포함)
         const apiUri = isVercel
-            ? `${window.location.protocol}//${serverIp}/api/measurements`
+            ? `${protocol}//${serverIp}/api/measurements`
             : `http://${serverIp}:8000/api/measurements`;
 
         const isHttps = window.location.protocol === 'https:';
