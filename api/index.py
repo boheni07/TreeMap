@@ -26,16 +26,91 @@ except ImportError as e:
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# [중요] DB 초기화: Vercel 서버리스 런타임 호환성을 위해 모듈 로드 시점에 수행
-try:
-    models.Base.metadata.create_all(bind=engine)
-    logger.info("Database initialized at module level")
-except Exception as e:
-    logger.error(f"DB Init Error: {e}")
+from contextlib import asynccontextmanager
+
+# [중요] 자동 시딩을 위한 샘플 데이터 정의
+SAMPLE_TREES = [
+    {
+        "species": "소나무 (Pinus densiflora)",
+        "dbh": 35.5,
+        "height": 12.4,
+        "health_score": 92.0,
+        "tree_latitude": 37.5451,
+        "tree_longitude": 127.0423,
+        "device_latitude": 37.5450,
+        "device_longitude": 127.0422,
+        "device_model": "iPhone 15 Pro"
+    },
+    {
+        "species": "느티나무 (Zelkova serrata)",
+        "dbh": 48.2,
+        "height": 15.6,
+        "health_score": 88.0,
+        "tree_latitude": 37.5448,
+        "tree_longitude": 127.0431,
+        "device_latitude": 37.5447,
+        "device_longitude": 127.0430,
+        "device_model": "Samsung Galaxy S24"
+    },
+    {
+        "species": "은행나무 (Ginkgo biloba)",
+        "dbh": 42.0,
+        "height": 18.2,
+        "health_score": 95.0,
+        "tree_latitude": 37.5455,
+        "tree_longitude": 127.0435,
+        "device_latitude": 37.5454,
+        "device_longitude": 127.0434,
+        "device_model": "Google Pixel 8"
+    },
+    {
+        "species": "벚나무 (Prunus serrulata)",
+        "dbh": 28.4,
+        "height": 8.5,
+        "health_score": 85.0,
+        "tree_latitude": 37.5442,
+        "tree_longitude": 127.0428,
+        "device_latitude": 37.5441,
+        "device_longitude": 127.0427,
+        "device_model": "iPhone 14"
+    },
+    {
+        "species": "메타세쿼이아 (Metasequoia)",
+        "dbh": 55.0,
+        "height": 22.0,
+        "health_score": 90.0,
+        "tree_latitude": 37.5445,
+        "tree_longitude": 127.0440,
+        "device_latitude": 37.5444,
+        "device_longitude": 127.0439,
+        "device_model": "iPhone 15 Pro Max"
+    }
+]
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # [DB 초기화 및 시딩 로직]
+    try:
+        models.Base.metadata.create_all(bind=engine)
+        db = next(get_db())
+        count = db.query(models.TreeMeasurement).count()
+        if count == 0:
+            logger.info("No data found. Auto-seeding 5 sample trees...")
+            for tree_data in SAMPLE_TREES:
+                db_tree = models.TreeMeasurement(**tree_data)
+                db.add(db_tree)
+            db.commit()
+            logger.info("Auto-seeding completed.")
+        else:
+            logger.info(f"Database already has {count} entries. Skipping seeding.")
+    except Exception as e:
+        logger.error(f"Lifespan setup error: {e}")
+    yield
 
 app = FastAPI(
     title="TreeMap Backend API",
-    version="1.1.0"
+    version="1.1.0",
+    lifespan=lifespan
 )
 
 app.add_middleware(
