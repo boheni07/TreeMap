@@ -4,45 +4,40 @@ from sqlalchemy.orm import Session
 import os
 import logging
 from typing import List
-from contextlib import asynccontextmanager
 
-# Vercel 및 로컬 환경 호환 임포트
-import models
-import schemas
-import database
-from database import engine, get_db
+# 임포트 오류를 방지하기 위해 sys.path 추가 (필요시)
+import sys
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.append(current_dir)
+
+# Vercel 및 로컬 환경 호환 임포트 (전역 초기화 방식)
+try:
+    import models, schemas, database
+    from database import engine, get_db
+except ImportError as e:
+    logger = logging.getLogger(__name__)
+    logger.error(f"Import error at start: {e}")
+    # 재시도 (패키지 형태)
+    from . import models, schemas, database
+    from .database import engine, get_db
 
 # 로깅 설정
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Lifespan 관리 (DB 초기화)
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # 앱 시작 시: 데이터베이스 테이블 생성
-    try:
-        models.Base.metadata.create_all(bind=engine)
-        logger.info("Database tables initialized successfully via lifespan")
-    except Exception as e:
-        logger.error(f"Database initialization warning/error: {e}")
-        # Vercel 환경에서는 실패해도 앱 실행은 계속 시도
-        if not os.environ.get('VERCEL'):
-            raise
-    yield
-    # 앱 종료 시: 필요한 정리 작업 수행
-    pass
+# [중요] DB 초기화: Vercel 서버리스 런타임 호환성을 위해 모듈 로드 시점에 수행
+try:
+    models.Base.metadata.create_all(bind=engine)
+    logger.info("Database initialized at module level")
+except Exception as e:
+    logger.error(f"DB Init Error: {e}")
 
 app = FastAPI(
     title="TreeMap Backend API",
-    description="AI 기반 수목 측정 데이터 관리 API",
-    version="1.0.0",
-    lifespan=lifespan
+    version="1.1.0"
 )
 
-# CORS 설정
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -53,25 +48,20 @@ app.add_middleware(
 
 @app.get("/", tags=["Health"])
 def read_root():
-    """API 상태 확인"""
-    return {"message": "Welcome to TreeMap Backend API", "status": "healthy"}
+    return {"message": "Welcome to TreeMap API", "env": "vercel" if os.environ.get('VERCEL') else "local"}
 
 @app.post("/api/measurements", response_model=schemas.TreeMeasurement, tags=["Measurements"])
 def create_measurement(measurement: schemas.TreeMeasurementCreate, db: Session = Depends(get_db)):
-    """새로운 수목 측정 데이터 생성"""
     try:
         db_measurement = models.TreeMeasurement(
-            # 기본 측정 데이터
             dbh=measurement.dbh,
             height=measurement.height,
             species=measurement.species,
             health_score=measurement.health_score,
-            # 위치 정보
             device_latitude=measurement.device_latitude,
             device_longitude=measurement.device_longitude,
             tree_latitude=measurement.tree_latitude,
             tree_longitude=measurement.tree_longitude,
-            # IMU 데이터
             accelerometer_x=measurement.accelerometer_x,
             accelerometer_y=measurement.accelerometer_y,
             accelerometer_z=measurement.accelerometer_z,
@@ -84,17 +74,14 @@ def create_measurement(measurement: schemas.TreeMeasurementCreate, db: Session =
             device_pitch=measurement.device_pitch,
             device_roll=measurement.device_roll,
             device_azimuth=measurement.device_azimuth,
-            # 환경 센서 데이터
             ambient_light=measurement.ambient_light,
             pressure=measurement.pressure,
             altitude=measurement.altitude,
             temperature=measurement.temperature,
-            # 카메라 메타데이터
             image_width=measurement.image_width,
             image_height=measurement.image_height,
             focal_length=measurement.focal_length,
             camera_distance=measurement.camera_distance,
-            # 시스템 정보
             device_model=measurement.device_model,
             os_version=measurement.os_version,
             app_version=measurement.app_version
@@ -102,22 +89,16 @@ def create_measurement(measurement: schemas.TreeMeasurementCreate, db: Session =
         db.add(db_measurement)
         db.commit()
         db.refresh(db_measurement)
-        logger.info(f"Created measurement with ID: {db_measurement.id}")
         return db_measurement
     except Exception as e:
-        logger.error(f"Failed to create measurement: {e}")
+        logger.error(f"Runtime Error: {e}")
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to create measurement: {str(e)}")
+        # 에러 내용을 구체적으로 반환하여 디버깅 지원
+        raise HTTPException(status_code=500, detail=f"Database or Logic Error: {str(e)}")
 
 @app.get("/api/measurements", response_model=List[schemas.TreeMeasurement], tags=["Measurements"])
 def read_measurements(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    """수목 측정 데이터 목록 조회"""
     try:
-        if limit > 100:
-            limit = 100
-        measurements = db.query(models.TreeMeasurement).offset(skip).limit(limit).all()
-        logger.info(f"Retrieved {len(measurements)} measurements")
-        return measurements
+        return db.query(models.TreeMeasurement).offset(skip).limit(limit).all()
     except Exception as e:
-        logger.error(f"Failed to retrieve measurements: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to retrieve measurements: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))

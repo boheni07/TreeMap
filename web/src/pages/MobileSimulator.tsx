@@ -154,13 +154,19 @@ const MobileSimulator = () => {
                 longitude: measurementData.gps.target.lon
             })
         })
-            .then(res => {
+            .then(async res => {
                 if (res.ok) {
                     console.log('Data synced to server');
                     alert('✅ 분석 데이터가 서버로 전송되었습니다.');
                 } else {
-                    console.error('Server sync failed');
-                    alert(`❌ 서버 전송 실패 (코드: ${res.status})\n\n시도한 주소: ${apiUri}\n\n도움말:\n1. 서버 PC의 방화벽에서 8000번 포트가 열려있는지 확인하세요.\n2. 서버 프로그램(FastAPI)이 실행 중인지 확인하세요.`);
+                    let detail = '알 수 없는 서버 오류';
+                    try {
+                        const errorData = await res.json();
+                        detail = errorData.detail || detail;
+                    } catch (e) { }
+
+                    console.error('Server sync failed:', detail);
+                    alert(`❌ 서버 전송 실패 (코드: ${res.status})\n\n상세 내용: ${detail}\n\n도움말:\n1. 서버 PC의 방화벽에서 8000번 포트가 열려있는지 확인하세요.\n2. 서버 프로그램(FastAPI)이 실행 중인지 확인하세요.`);
                 }
             })
             .catch(err => {
