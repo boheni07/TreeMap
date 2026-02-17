@@ -32,6 +32,8 @@ interface TreeData {
     deviceLongitude?: number;
     treeLatitude?: number;  // 나무 위치 (계산된 피사체 위치)
     treeLongitude?: number;
+    adjustedTreeLatitude?: number; // 사용자 보정 위치
+    adjustedTreeLongitude?: number;
 
     measured_at: string;
 
@@ -233,17 +235,29 @@ const TreeViewMap = () => {
                                 ` : ''}
                             ` : ''}
                             
-                            <div style="margin-top: 8px; font-size: 11px; color: #666;">
-                                ${tree.treeLatitude != null && tree.treeLongitude != null ? `<div>🌳 <strong>나무 위치:</strong> ${tree.treeLatitude.toFixed(6)}, ${tree.treeLongitude.toFixed(6)}</div>` : ''}
-                                ${tree.deviceLatitude != null && tree.deviceLongitude != null ? `<div>📱 <strong>기기 위치:</strong> ${tree.deviceLatitude.toFixed(6)}, ${tree.deviceLongitude.toFixed(6)}</div>` : ''}
+                            <div style="margin-top: 12px; font-size: 11px; color: #444; border-top: 1px dashed #ccc; pt: 8px;">
+                                <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+                                    <span style="color: #666;">📱 기기 GPS:</span>
+                                    <span>${tree.deviceLatitude?.toFixed(6) || '-'}, ${tree.deviceLongitude?.toFixed(6) || '-'}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-top: 2px;">
+                                    <span style="color: #666;">🌳 산정 위치:</span>
+                                    <span>${tree.treeLatitude?.toFixed(6) || '-'}, ${tree.treeLongitude?.toFixed(6) || '-'}</span>
+                                </div>
+                                ${tree.adjustedTreeLatitude ? `
+                                <div style="display: flex; justify-content: space-between; margin-top: 2px; color: #d32f2f; font-weight: bold;">
+                                    <span>📍 보정 위치:</span>
+                                    <span>${tree.adjustedTreeLatitude.toFixed(6)}, ${tree.adjustedTreeLongitude?.toFixed(6)}</span>
+                                </div>
+                                ` : ''}
                             </div>
                         </div>
                     </div>
                 `;
 
-                // 마커는 나무 위치에 표시 (나무 위치가 없으면 기기 위치 사용)
-                const markerLat = tree.treeLatitude ?? tree.deviceLatitude ?? 0;
-                const markerLon = tree.treeLongitude ?? tree.deviceLongitude ?? 0;
+                // 마커 수순: 보정 위치 > 나무 위치 > 기기 위치
+                const markerLat = tree.adjustedTreeLatitude ?? tree.treeLatitude ?? tree.deviceLatitude ?? 0;
+                const markerLon = tree.adjustedTreeLongitude ?? tree.treeLongitude ?? tree.deviceLongitude ?? 0;
 
                 if (markerLat !== 0 && markerLon !== 0) {
                     const marker = L.marker([markerLat, markerLon], { icon: DefaultIcon })
