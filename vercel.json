@@ -20,7 +20,7 @@
         },
         {
             "source": "/((?!api/).*)",
-            "destination": "/web/index.html"
+            "destination": "/index.html"
         }
     ]
 }
