@@ -193,21 +193,43 @@ const TreeViewMap = () => {
                                 <span style="color: #2e7d32;">(Smartphone vs Server AI)</span>
                              </div>
                              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                <!-- 1. 흉고직경 (DBH) -->
                                 <div style="text-align: center; background: white; padding: 6px; border-radius: 6px; border: 1px solid #d1d9e6;">
                                     <div style="font-size: 8px; color: #78909c;">흉고직경 (DBH)</div>
-                                    <div style="font-size: 14px; font-weight: 800;">
-                                        <span style="color: #666; font-size: 11px;">${tree.dbh}</span> 
-                                        <span style="margin: 0 4px; color: #ccc;">→</span> 
+                                    <div style="font-size: 13px; font-weight: 800;">
+                                        <span style="color: #666; font-size: 10px;">${tree.dbh}</span> 
+                                        <span style="margin: 0 2px; color: #ccc;">→</span> 
                                         <span style="color: #d32f2f;">${tree.serverDbh || '-'}</span>
                                         <small style="font-size: 8px; color: #999;">cm</small>
                                     </div>
                                 </div>
+                                <!-- 2. 수고 (Height) -->
                                 <div style="text-align: center; background: white; padding: 6px; border-radius: 6px; border: 1px solid #d1d9e6;">
                                     <div style="font-size: 8px; color: #78909c;">수고 (Height)</div>
-                                    <div style="font-size: 14px; font-weight: 800;">
-                                        <span style="color: #666; font-size: 11px;">${tree.height}</span> 
-                                        <span style="margin: 0 4px; color: #ccc;">→</span> 
+                                    <div style="font-size: 13px; font-weight: 800;">
+                                        <span style="color: #666; font-size: 10px;">${tree.height}</span> 
+                                        <span style="margin: 0 2px; color: #ccc;">→</span> 
                                         <span style="color: #2e7d32;">${tree.serverHeight || '-'}</span>
+                                        <small style="font-size: 8px; color: #999;">m</small>
+                                    </div>
+                                </div>
+                                <!-- 3. 수관폭 (Crown Width) -->
+                                <div style="text-align: center; background: white; padding: 6px; border-radius: 6px; border: 1px solid #d1d9e6;">
+                                    <div style="font-size: 8px; color: #78909c;">수관폭 (Width)</div>
+                                    <div style="font-size: 13px; font-weight: 800;">
+                                        <span style="color: #666; font-size: 10px;">${tree.crown_width || '-'}</span> 
+                                        <span style="margin: 0 2px; color: #ccc;">→</span> 
+                                        <span style="color: #1b5e20;">${tree.serverCrownWidth || '-'}</span>
+                                        <small style="font-size: 8px; color: #999;">m</small>
+                                    </div>
+                                </div>
+                                <!-- 4. 지하고 (Ground Clr.) -->
+                                <div style="text-align: center; background: white; padding: 6px; border-radius: 6px; border: 1px solid #d1d9e6;">
+                                    <div style="font-size: 8px; color: #78909c;">지하고 (Clr.)</div>
+                                    <div style="font-size: 13px; font-weight: 800;">
+                                        <span style="color: #666; font-size: 10px;">${tree.ground_clearance || '-'}</span> 
+                                        <span style="margin: 0 2px; color: #ccc;">→</span> 
+                                        <span style="color: #0277bd;">${tree.serverGroundClearance || '-'}</span>
                                         <small style="font-size: 8px; color: #999;">m</small>
                                     </div>
                                 </div>
