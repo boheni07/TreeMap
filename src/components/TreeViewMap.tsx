@@ -85,10 +85,16 @@ interface TreeData {
     groundClearance?: number;
 }
 
-const TreeViewMap = () => {
+interface TreeViewMapProps {
+    focusTarget?: { lat: number; lng: number; id: number } | null;
+    onSelectTarget?: (target: { lat: number; lng: number; id: number }) => void;
+}
+
+const TreeViewMap: React.FC<TreeViewMapProps> = ({ focusTarget, onSelectTarget }) => {
     const mapRef = useRef<HTMLDivElement>(null);
     const mapInstance = useRef<L.Map | null>(null);
     const markersLayer = useRef<L.LayerGroup | null>(null);
+    const markersMap = useRef<Map<number, L.Marker>>(new Map()); // ID로 마커를 찾기 위한 맵
 
     const [trees, setTrees] = useState<TreeData[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -165,6 +171,7 @@ const TreeViewMap = () => {
 
         // 기존 마커 제거
         markersLayer.current.clearLayers();
+        markersMap.current.clear();
 
         if (trees.length > 0) {
             let latestMarker: L.Marker | null = null;
@@ -348,6 +355,14 @@ const TreeViewMap = () => {
                         .bindPopup(popupContent, { maxWidth: 400 })
                         .addTo(markersLayer.current!);
 
+                    // 리스트 연동: 마커 클릭 시 부모 컴포넌트에 알림
+                    marker.on('click', () => {
+                        onSelectTarget?.({ lat: markerLat, lng: markerLon, id: tree.id });
+                    });
+
+                    // ID로 마커 저장
+                    markersMap.current.set(tree.id, marker);
+
                     // 마지막 마커(가장 최근 등록) 저장
                     if (index === sortedTrees.length - 1) {
                         latestMarker = marker;
@@ -356,15 +371,15 @@ const TreeViewMap = () => {
             });
 
 
-            // 마지막 데이터 위치로 시점 이동 및 팝업 열기
-            if (latestMarker) {
+            // 마지막 데이터 위치로 시점 이동 (focusTarget이 없을 때만)
+            if (latestMarker && !focusTarget) {
                 const lastTree = sortedTrees[sortedTrees.length - 1];
                 // 포커싱 좌표 우선순위: 보정 > 산정 > 기기
                 const viewLat = lastTree.adjustedTreeLatitude ?? lastTree.treeLatitude ?? lastTree.deviceLatitude ?? 0;
                 const viewLon = lastTree.adjustedTreeLongitude ?? lastTree.treeLongitude ?? lastTree.deviceLongitude ?? 0;
 
                 if (viewLat !== 0 && viewLon !== 0) {
-                    console.log(`Auto-focusing on latest tree: ${lastTree.species} at [${viewLat}, ${viewLon}]`);
+                    // console.log(`Auto-focusing on latest tree: ${lastTree.species} at [${viewLat}, ${viewLon}]`);
 
                     // 지도가 완전히 렌더링된 후 이동하도록 지연 시간 최적화
                     setTimeout(() => {
@@ -373,17 +388,36 @@ const TreeViewMap = () => {
                                 animate: true,
                                 duration: 1.5
                             });
-
-                            // 이동 애니메이션이 끝난 후 팝업 열기
-                            setTimeout(() => {
-                                latestMarker?.openPopup();
-                            }, 1600);
                         }
                     }, 300);
                 }
             }
         }
     }, [trees]);
+
+    // 5. 외부 focusTarget 변경 시 시점 이동 - 여기가 핵심입니다!
+    useEffect(() => {
+        if (!mapInstance.current || !focusTarget) return;
+
+        const { lat, lng, id } = focusTarget;
+
+        console.log(`Focusing on target: ID ${id} at [${lat}, ${lng}]`);
+
+        // 지도 이동
+        mapInstance.current.setView([lat, lng], 19, {
+            animate: true,
+            duration: 1.0
+        });
+
+        // 해당 ID의 마커 찾아서 팝업 열기
+        const marker = markersMap.current.get(id);
+        if (marker) {
+            setTimeout(() => {
+                marker.openPopup();
+            }, 300); // 이동 후 살짝 딜레이 주고 팝업
+        }
+
+    }, [focusTarget]);
 
     return (
         <div style={{ width: '100%', height: '100%', position: 'relative', backgroundColor: '#111' }}>

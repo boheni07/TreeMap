@@ -4,6 +4,7 @@ import { Routes, Route } from 'react-router-dom';
 // Pages
 import MobileSimulator from './pages/MobileSimulator';
 import MapDashboard from './pages/MapDashboard';
+import MeasurementsList from './pages/MeasurementsList';
 
 // Global Styles for Leaflet
 import 'leaflet/dist/leaflet.css';
@@ -67,8 +68,9 @@ const App = () => {
                     {/* 현장용 모바일 시뮬레이터 (기본 경로) */}
                     <Route path="/" element={<MobileSimulator />} />
 
-                    {/* 서버 관리용 지도 서비스 */}
+                    {/* 서버 관리용 서비스 */}
                     <Route path="/admin" element={<MapDashboard />} />
+                    <Route path="/admin/measurements" element={<MeasurementsList />} />
 
                     {/* 잘못된 경로 접근 시 기본 홈으로 이동 */}
                     <Route path="*" element={<MobileSimulator />} />
