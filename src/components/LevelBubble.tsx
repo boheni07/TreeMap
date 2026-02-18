@@ -9,7 +9,8 @@ interface LevelBubbleProps {
 export const LevelBubble: React.FC<LevelBubbleProps> = ({ angle, roll, isVertical }) => {
     return (
         <div style={{ position: 'absolute', top: '75%', left: '50%', transform: 'translate(-50%, -50%)', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', zIndex: 11, width: 0, height: 0 }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            {/* 중앙 정렬 기준점 (0x0) */}
+            <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                 <div style={{
                     width: 'clamp(100px, 28vw, 130px)', height: 'clamp(100px, 28vw, 130px)',
                     border: `3px solid ${isVertical ? 'rgba(76, 175, 80, 0.8)' : 'rgba(255, 255, 255, 0.3)'}`,
@@ -29,7 +30,23 @@ export const LevelBubble: React.FC<LevelBubbleProps> = ({ angle, roll, isVertica
                         <div style={{ position: 'absolute', top: '15%', left: '15%', width: '40%', height: '40%', background: 'rgba(255,255,255,0.6)', borderRadius: '50%', filter: 'blur(1px)' }} />
                     </div>
                 </div>
-                <span style={{ color: isVertical ? '#4caf50' : '#ff5252', fontSize: 'clamp(10px, 2.5vw, 12px)', fontWeight: 'bold', marginTop: 12, textShadow: '0 2px 4px rgba(0,0,0,0.5)', letterSpacing: '1px', whiteSpace: 'nowrap' }}>1.2M TARGET LEVEL</span>
+
+                {/* 텍스트는 버블 아래에 절대 위치로 배치하여 중심점에 영향을 주지 않도록 함 */}
+                <span style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    color: isVertical ? '#4caf50' : '#ff5252',
+                    fontSize: 'clamp(10px, 2.5vw, 12px)',
+                    fontWeight: 'bold',
+                    marginTop: 12,
+                    textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                    letterSpacing: '1px',
+                    whiteSpace: 'nowrap'
+                }}>
+                    1.2M TARGET LEVEL
+                </span>
             </div>
         </div>
     );

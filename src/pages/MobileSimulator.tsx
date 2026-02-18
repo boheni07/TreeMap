@@ -182,7 +182,7 @@ const MobileSimulator = () => {
                 <MeasurementOverlay distance={currentDistance} targetGps={targetGps} isVertical={isVertical} />
 
                 {/* 센터 포인트 */}
-                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 12, pointerEvents: 'none' }}>
+                <div style={{ position: 'absolute', top: '75%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 12, pointerEvents: 'none' }}>
                     <div style={{ position: 'relative', width: '40px', height: '40px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                         <div style={{ position: 'absolute', width: '100%', height: '3px', backgroundColor: '#ff5252', boxShadow: '0 0 10px rgba(255, 82, 82, 0.8)' }} />
                         <div style={{ position: 'absolute', height: '100%', width: '3px', backgroundColor: '#ff5252', boxShadow: '0 0 10px rgba(255, 82, 82, 0.8)' }} />
